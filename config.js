@@ -18,9 +18,9 @@
 //   type : "food" = megehető | "building" = Marhatelep (termelő)
 const FOODS = [
   { id: "huscafat",   name: "Húscafat",            icon: "🍖", drop: 1000, hp: 1,   type: "food" },
-  { id: "hamburger",  name: "Hamburger",           icon: "🍔", drop: 500,  hp: 3,   type: "food" },
-  { id: "hbmenu",     name: "Hamburger menü",      icon: "🍟", drop: 350,  hp: 5,   type: "food" },
-  { id: "csirkecomb", name: "Csirkecomb",          icon: "🍗", drop: 180,  hp: 9,   type: "food" },
+  { id: "csirkecomb", name: "Csirkecomb",          icon: "🍗", drop: 500,  hp: 3,   type: "food" },
+  { id: "hamburger",  name: "Hamburger",           icon: "🍔", drop: 350,  hp: 5,   type: "food" },
+  { id: "hbmenu",     name: "Hamburger menü",      icon: "🍟", drop: 180,  hp: 9,   type: "food" },
   { id: "csirke",     name: "Egész csirke",        icon: "🐔", drop: 90,   hp: 15,  type: "food" },
   { id: "oldalas",    name: "Oldalas",             icon: "🥓", drop: 45,   hp: 24,  type: "food" },
   { id: "steak",      name: "Steak",               icon: "🥩", drop: 18,   hp: 40,  type: "food" },
