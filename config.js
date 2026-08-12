@@ -95,6 +95,10 @@ const CONFIG = {
   // aranypénz MEGMARADNAK (meta-progresszió). false = teljes nulláról.
   gameOverKeepUpgrades: true,
 
+  // ── ÉLMÉNY (juice) ──
+  soundDefault: true,   // hangeffektek alapból be
+  vibrateDefault: true, // rezgés alapból be (iPhone-on nincs Vibration API → ott hatástalan)
+
   // ── MENTÉS ──
   autosaveMs: 3000,
   maxOfflineCatchupMs: 24 * 60 * 60 * 1000, // offline max 24 óra

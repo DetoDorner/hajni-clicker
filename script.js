@@ -54,6 +54,10 @@
       marhatelep: 0,
       marhaProdElapsed: 0,
 
+      // élmény-beállítások
+      soundOn: CONFIG.soundDefault,
+      vibrateOn: CONFIG.vibrateDefault,
+
       lastSaved: Date.now(),
     };
   }
@@ -71,9 +75,79 @@
       "autoFeedBtn","fridgeSlots","buySlotBtn",
       "foodInfoBtn","foodInfoPanel","closeFoodInfo","foodInfoList",
       "upgBtn","upgPanel","closeUpg","upgStatus","upgList","resetAllBtn",
+      "soundToggle","vibrateToggle","fxLayer",
       "gameoverPanel","restartBtn",
     ];
     ids.forEach(id => el[id] = document.getElementById(id));
+  }
+
+  // ============================================================
+  // ÉLMÉNY (juice): hang + rezgés + konfetti + rázás
+  // ============================================================
+  let audioCtx = null;
+  function ensureAudio() {
+    if (!game.soundOn) return null;
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+    } catch (_) { return null; }
+    return audioCtx;
+  }
+  function beep(freq, durMs, type, gain, delay) {
+    const ctx = ensureAudio(); if (!ctx) return;
+    const t = ctx.currentTime + (delay || 0);
+    const osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = type || "sine"; osc.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(gain || 0.12, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + durMs / 1000);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(t); osc.stop(t + durMs / 1000 + 0.03);
+  }
+  function sfx(name) {
+    if (!game.soundOn) return;
+    switch (name) {
+      case "click":    beep(200 + Math.random() * 50, 55, "square", 0.05); break;
+      case "coin":     beep(880, 60, "triangle", 0.07); beep(1320, 55, "triangle", 0.05, 0.04); break;
+      case "feed":     beep(300, 90, "sine", 0.11); break;
+      case "levelup":  [523, 659, 784, 1047].forEach((f, i) => beep(f, 150, "triangle", 0.12, i * 0.08)); break;
+      case "jackpot":  [660, 880, 1100, 1320].forEach((f, i) => beep(f, 170, "sawtooth", 0.11, i * 0.06)); break;
+      case "gameover": [440, 330, 262, 196].forEach((f, i) => beep(f, 260, "sine", 0.13, i * 0.15)); break;
+      case "buy":      beep(500, 70, "square", 0.08); beep(750, 70, "square", 0.06, 0.05); break;
+    }
+  }
+  function haptic(pattern) {
+    if (game.vibrateOn && navigator.vibrate) { try { navigator.vibrate(pattern); } catch (_) {} }
+  }
+  function screenShake() {
+    const app = document.querySelector(".app"); if (!app) return;
+    app.classList.remove("shake"); void app.offsetWidth; app.classList.add("shake");
+    setTimeout(() => app.classList.remove("shake"), 450);
+  }
+  function confettiBurst(n) {
+    if (!el.fxLayer) return;
+    const colors = ["#ff9d3c", "#ffd24d", "#52c95f", "#ff5a8a", "#5ab0ff", "#c08cff"];
+    for (let i = 0; i < (n || 26); i++) {
+      const c = document.createElement("div");
+      c.className = "confetti";
+      c.style.left = (10 + Math.random() * 80) + "%";
+      c.style.background = colors[(Math.random() * colors.length) | 0];
+      c.style.animationDelay = (Math.random() * 0.15) + "s";
+      c.style.transform = `rotate(${Math.random() * 360}deg)`;
+      el.fxLayer.appendChild(c);
+      setTimeout(() => c.remove(), 1600);
+    }
+  }
+  function bannerFlash(text) {
+    if (!el.fxLayer) return;
+    const b = document.createElement("div");
+    b.className = "fx-banner"; b.textContent = text;
+    el.fxLayer.appendChild(b);
+    setTimeout(() => b.remove(), 1200);
+  }
+  function celebrateLevelUp(newLevel) {
+    sfx("levelup"); haptic([15, 30, 15]);
+    confettiBurst(30); bannerFlash("SZINT " + newLevel + "! 🎉");
   }
 
   // ── SEGÉDEK ───────────────────────────────────────────────
@@ -136,6 +210,9 @@
       spawnPopup(ok ? food.icon : "❌", ok ? food.name : "Hűtő tele!", ev);
       setLastGain(ok ? `${food.icon} ${food.name} +1` : "❌ A hűtő tele van!");
     }
+    const jackpot = food.id === "marhatelep" || food.id === "marha";
+    if (jackpot) { sfx("jackpot"); haptic([20, 40, 20]); screenShake(); }
+    else { sfx("click"); haptic(8); }
     renderFridge(); updateUI(); scheduleSave();
   }
 
@@ -144,6 +221,7 @@
     game.gold += CONFIG.goldPerClick;
     spawnPopup("🪙", `+${CONFIG.goldPerClick}`, ev);
     setLastGain(`🪙 +${CONFIG.goldPerClick} aranypénz`);
+    sfx("coin"); haptic(8);
     updateUI(); scheduleSave();
   }
 
@@ -210,6 +288,7 @@
     const cost = lacikaUpgradeCost(game.lacikaLevel);
     if (game.gold < cost) return;
     game.gold -= cost; game.lacikaLevel++;
+    sfx("buy"); haptic(10);
     renderUpgrades(); updateUI(); saveGame();
   }
 
@@ -244,8 +323,11 @@
 
   function feedFromSlot(slotIdx) {
     if (game.state !== "hungry" || game.paused) return;
+    const prevLevel = game.level;
     if (!feedOne(slotIdx)) return;
     game.feedFlashUntil = performance.now() + 700;
+    sfx("feed"); haptic(12);
+    if (game.level > prevLevel) celebrateLevelUp(game.level);
     if (game.hunger <= 0) goToSleep(); else maybeGameOver();
     renderFridge(); renderUpgrades(); updateUI(); pulseLevel(); scheduleSave();
   }
@@ -267,6 +349,7 @@
 
   function autoFeed() {
     if (game.state !== "hungry" || game.paused) return;
+    const prevLevel = game.level;
     let guard = 0;
     while (game.state === "hungry" && game.hunger > 0 && !fridgeIsEmpty() && guard < 100000) {
       const idx = pickBestSlot(game.hunger);
@@ -276,6 +359,8 @@
       if (game.hunger <= 0) break;
     }
     game.feedFlashUntil = performance.now() + 700;
+    sfx("feed"); haptic(12);
+    if (game.level > prevLevel) celebrateLevelUp(game.level);
     if (game.hunger <= 0) goToSleep(); else maybeGameOver();
     renderFridge(); renderUpgrades(); updateUI(); pulseLevel(); scheduleSave();
   }
@@ -337,6 +422,7 @@
 
   function doGameOver() {
     game.state = "gameover";
+    sfx("gameover"); haptic([60, 50, 60, 50, 120]);
     updateUI(); renderFridge();
     if (el.gameoverPanel) el.gameoverPanel.classList.add("open");
     saveGame();
@@ -380,6 +466,7 @@
     const cost = fridgeSlotCost(game.fridgeSlots);
     if (game.gold < cost) return;
     game.gold -= cost; game.fridgeSlots++;
+    sfx("buy"); haptic(10);
     renderFridge(); renderUpgrades(); updateUI(); saveGame();
   }
   function buyBed() {
@@ -387,6 +474,7 @@
     const cost = bedUpgradeCost(game.bedLevel);
     if (game.gold < cost) return;
     game.gold -= cost; game.bedLevel++;
+    sfx("buy"); haptic(10);
     renderUpgrades(); updateUI(); saveGame();
   }
   function buyLipo() {
@@ -394,6 +482,7 @@
     const cost = lipoUpgradeCost(game.lipoLevel);
     if (game.gold < cost) return;
     game.gold -= cost; game.lipoLevel++;
+    sfx("buy"); haptic(10);
     renderUpgrades(); updateUI(); saveGame();
   }
 
@@ -405,6 +494,20 @@
     game.paused = !game.paused;
     lastTick = performance.now();
     renderFridge(); updateUI(); saveGame();
+  }
+
+  // ── Hang / rezgés kapcsoló ──
+  function toggleSound() { game.soundOn = !game.soundOn; if (game.soundOn) sfx("buy"); updateToggles(); saveGame(); }
+  function toggleVibrate() { game.vibrateOn = !game.vibrateOn; if (game.vibrateOn) haptic(25); updateToggles(); saveGame(); }
+  function updateToggles() {
+    if (el.soundToggle) {
+      el.soundToggle.textContent = game.soundOn ? "🔊 Hang: BE" : "🔇 Hang: KI";
+      el.soundToggle.classList.toggle("off", !game.soundOn);
+    }
+    if (el.vibrateToggle) {
+      el.vibrateToggle.textContent = game.vibrateOn ? "📳 Rezgés: BE" : "📴 Rezgés: KI";
+      el.vibrateToggle.classList.toggle("off", !game.vibrateOn);
+    }
   }
 
   // ============================================================
@@ -556,6 +659,7 @@
     // gyors etetés gomb
     if (el.autoFeedBtn) el.autoFeedBtn.disabled = !(hungry && !game.paused);
 
+    updateToggles();
     renderFridgeHead();
   }
 
@@ -762,6 +866,9 @@
 
     el.foodInfoBtn.addEventListener("click", () => { renderFoodInfo(); el.foodInfoPanel.classList.add("open"); });
     el.closeFoodInfo.addEventListener("click", () => el.foodInfoPanel.classList.remove("open"));
+
+    el.soundToggle.addEventListener("click", toggleSound);
+    el.vibrateToggle.addEventListener("click", toggleVibrate);
 
     el.upgList.addEventListener("click", (e) => {
       const b = e.target.closest("[data-upg]");

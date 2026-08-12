@@ -523,6 +523,51 @@ body {
 .go-info { font-size: 13px; color: var(--muted); margin-bottom: 22px; line-height: 1.5; }
 .go-btn { background: linear-gradient(180deg, #ff7a7d, var(--danger)); color: #fff; margin-bottom: 0; box-shadow: 0 8px 22px rgba(255, 90, 95, 0.35); }
 
+/* ============================================================
+   ÉLMÉNY (juice): FX-réteg, konfetti, banner, rázás, kapcsolók
+   ============================================================ */
+.fx-layer { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; }
+.confetti {
+  position: absolute; top: -14px; width: 9px; height: 14px; border-radius: 2px;
+  animation: confetti-fall 1.5s ease-in forwards;
+}
+@keyframes confetti-fall {
+  0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(102vh) rotate(680deg); opacity: 0.9; }
+}
+.fx-banner {
+  position: absolute; top: 34%; left: 50%; transform: translate(-50%, -50%);
+  font-size: 30px; font-weight: 900; letter-spacing: 1px; color: #fff;
+  text-shadow: 0 2px 0 var(--accent-deep), 0 0 18px rgba(255, 170, 60, 0.9);
+  animation: banner-pop 1.2s ease-out forwards; white-space: nowrap;
+}
+@keyframes banner-pop {
+  0% { transform: translate(-50%, -50%) scale(.5); opacity: 0; }
+  20% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+  70% { transform: translate(-50%, -60%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -85%) scale(1); opacity: 0; }
+}
+.app.shake { animation: shake .45s cubic-bezier(.36,.07,.19,.97); }
+@keyframes shake {
+  10%,90% { transform: translateX(-2px); }
+  20%,80% { transform: translateX(4px); }
+  30%,50%,70% { transform: translateX(-7px); }
+  40%,60% { transform: translateX(7px); }
+}
+
+.settings-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.toggle-chip {
+  flex: 1; cursor: pointer; border-radius: 999px; padding: 9px 8px;
+  font-size: 12px; font-weight: 800;
+  background: linear-gradient(180deg, rgba(82,201,95,.18), rgba(82,201,95,.07));
+  border: 1px solid rgba(82,201,95,.5); color: #bff0c4;
+}
+.toggle-chip.off {
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border-color: var(--line); color: var(--muted-2);
+}
+.toggle-chip:active { transform: scale(.96); }
+
 /* Alacsony képernyő */
 @media (max-height: 720px) {
   .hajni-avatar { --w: min(70vw, 260px); }
