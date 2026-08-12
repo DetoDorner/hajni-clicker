@@ -76,6 +76,17 @@ const CONFIG = {
   lipoBaseCost: 100,           // 1. kezelés ára
   lipoCostGrowth: 1.55,
 
+  // ── LACIKA (tartva-termelő segéd) ──
+  // 1. szint (0→1) ára 50 🪙, szinte végtelenül fejleszthető.
+  // Aktiválás: 15 húscafat → Lacika aktív (szint × 15) mp-ig. Amíg aktív,
+  // a farm-gombokat NYOMVA TARTVA automatikusan termelnek.
+  lacikaBaseCost: 50,          // az 1. szint (0→1) ára
+  lacikaCostGrowth: 1.5,       // minden további szint ennyiszer drágább
+  lacikaSecondsPerLevel: 15,   // aktiválási időtartam = szint × ennyi mp
+  lacikaActivateFood: "huscafat",
+  lacikaActivateAmount: 15,    // egy aktiválás ennyi húscafatba kerül
+  lacikaHoldIntervalMs: 120,   // tartva ilyen gyakran termel (gyorsabb a kézinél)
+
   // ── MARHATELEP (jackpot termelő épület) ──
   marhatelepIntervalMs: 15000, // 15 mp-enként 1 Marha / telep a hűtőbe
 
@@ -152,6 +163,15 @@ function lipoUpgradeCost(lipoLevel) {
 // Egy teljes slot (adott kaja × darab) eladási ára.
 function sellPrice(hp, count) {
   return Math.max(1, Math.round(count * hp * CONFIG.sellFactor));
+}
+
+// A KÖVETKEZŐ Lacika-szint ára (level = jelenlegi szint; 0→1 = lacikaBaseCost).
+function lacikaUpgradeCost(level) {
+  return Math.round(CONFIG.lacikaBaseCost * Math.pow(CONFIG.lacikaCostGrowth, level));
+}
+// Egy aktiválás időtartama (ms) adott Lacika-szinten.
+function lacikaDurationMs(level) {
+  return level * CONFIG.lacikaSecondsPerLevel * 1000;
 }
 
 // Szintsáv színe a szinthez (a legmagasabb illeszkedő "min" nyer).

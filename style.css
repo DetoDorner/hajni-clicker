@@ -106,6 +106,29 @@ body {
   font-size: 12px; font-weight: 800; letter-spacing: .3px;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
 }
+/* Etetéskor rövid felvillanás a húspont-sávon */
+@keyframes barGain { 0% { filter: brightness(1); } 30% { filter: brightness(1.7) saturate(1.2); } 100% { filter: brightness(1); } }
+.level-bar-fill.gain { animation: barGain .5s ease; }
+
+/* ── LACIKA SÁV (csak aktív állapotban) ── */
+.lacika-bar {
+  display: none; position: relative; height: 20px; margin-top: 7px;
+  border-radius: 999px; overflow: hidden;
+  background: linear-gradient(180deg, #0e1508, #141d0b);
+  border: 1px solid #3f5a25;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.55), 0 0 12px rgba(140, 220, 70, 0.25);
+}
+.lacika-fill {
+  height: 100%; width: 100%; border-radius: 999px;
+  background: linear-gradient(180deg, #b6f05a, #6fbf2b);
+  transition: width .12s linear;
+}
+.lacika-text {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 900; letter-spacing: .5px; color: #10230a;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.3);
+  font-variant-numeric: tabular-nums;
+}
 
 .header-actions { display: flex; gap: 8px; }
 .mini-btn {
@@ -255,6 +278,26 @@ body {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
   color: #3a2408; position: relative; overflow: hidden;
   transition: transform .07s, box-shadow .07s, filter .2s;
+  touch-action: none; /* nyomva-tartás (Lacika) ne görgessen/jelöljön ki */
+}
+/* Lacika aktív: a gomb kicsit megváltozik – zöld keret, pulzálás, "TARTSD!" jelzés */
+.clicker-btn.lacika-on {
+  outline: 3px solid #8cdc46; outline-offset: -3px;
+  animation: lacikaPulse 1s ease-in-out infinite;
+}
+.clicker-btn.lacika-on::after {
+  content: "🦾 TARTSD"; position: absolute; top: 6px; left: 0; right: 0;
+  font-size: 10px; font-weight: 900; letter-spacing: .5px; color: #10230a;
+  text-shadow: 0 1px 0 rgba(255,255,255,.35);
+}
+@keyframes lacikaPulse {
+  0%,100% { box-shadow: 0 8px 0 #a8560f, 0 0 0 0 rgba(140, 220, 70, 0.55); }
+  50%     { box-shadow: 0 8px 0 #a8560f, 0 0 18px 5px rgba(140, 220, 70, 0.55); }
+}
+.clicker-btn.money.lacika-on { animation: lacikaPulseMoney 1s ease-in-out infinite; }
+@keyframes lacikaPulseMoney {
+  0%,100% { box-shadow: 0 8px 0 #a8801a, 0 0 0 0 rgba(140, 220, 70, 0.55); }
+  50%     { box-shadow: 0 8px 0 #a8801a, 0 0 18px 5px rgba(140, 220, 70, 0.55); }
 }
 .clicker-btn::before {
   content: ""; position: absolute; inset: 0 0 55% 0;
@@ -396,6 +439,18 @@ body {
 }
 .upg-buy:disabled { filter: grayscale(.75) brightness(.6); cursor: not-allowed; box-shadow: none; }
 .upg-buy:active:not(:disabled) { transform: scale(.95); }
+
+/* Lacika kártya: két gomb egymás alatt (fejlesztés + aktiválás) */
+.upg-actions { flex: 0 0 auto; display: flex; flex-direction: column; gap: 6px; }
+.upg-activate {
+  cursor: pointer; border: none; border-radius: 11px; padding: 10px 15px;
+  font-size: 13px; font-weight: 800; color: #10230a; white-space: nowrap;
+  background: linear-gradient(180deg, #b6f05a, #6fbf2b);
+  box-shadow: 0 3px 10px rgba(120, 200, 60, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: transform .08s, filter .15s;
+}
+.upg-activate:disabled { filter: grayscale(.7) brightness(.6); cursor: not-allowed; box-shadow: none; }
+.upg-activate:active:not(:disabled) { transform: scale(.95); }
 
 /* GAME OVER */
 .gameover {

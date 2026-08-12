@@ -44,6 +44,11 @@
       bedLevel: 1,
       lipoLevel: 0,
 
+      // Lacika (tartva-termelő segéd)
+      lacikaLevel: 0,
+      lacikaRemainingMs: 0,   // hátralévő aktív idő
+      lacikaTotalMs: 0,       // a sáv skálázásához (aktiváláskori teljes idő)
+
       fridge: new Array(MAX_SLOTS).fill(null),
 
       marhatelep: 0,
@@ -58,6 +63,7 @@
   function cacheDom() {
     const ids = [
       "levelNum","levelBarFill","levelBarText","goldNum",
+      "lacikaBar","lacikaFill","lacikaText",
       "hajniFace","hajniSprite","hajniState","hajniHint","hajniAvatar","lastGain",
       "sleepRow","sleepTime","hungerRow","hungerFill","hungerText","reqText",
       "burgerBtn","moneyBtn","pauseBtn","popupLayer",
@@ -115,8 +121,9 @@
   }
 
   function canFarm() { return game.state === "sleeping" && !game.paused; }
+  function lacikaActive() { return game.lacikaRemainingMs > 0; }
 
-  function onBurgerClick(ev) {
+  function produceFood(ev) {
     if (!canFarm()) return;
     const food = rollFood();
     if (food.type === "building") {
@@ -131,12 +138,78 @@
     renderFridge(); updateUI(); scheduleSave();
   }
 
-  function onMoneyClick(ev) {
+  function produceMoney(ev) {
     if (!canFarm()) return;
     game.gold += CONFIG.goldPerClick;
     spawnPopup("🪙", `+${CONFIG.goldPerClick}`, ev);
     setLastGain(`🪙 +${CONFIG.goldPerClick} aranypénz`);
     updateUI(); scheduleSave();
+  }
+
+  // ── Farm gomb: koppintás = 1 termelés; Lacika alatt NYOMVA TARTVA
+  //    automatikusan, gyorsabban termel. ──
+  function setupFarmButton(btn, action) {
+    let timer = null;
+    const stop = () => { if (timer) { clearInterval(timer); timer = null; } };
+    btn.addEventListener("pointerdown", (e) => {
+      if (e.isPrimary === false) return;
+      if (!canFarm()) return;
+      e.preventDefault();
+      action(e); // egy koppintás = egy termelés
+      if (lacikaActive()) {
+        try { btn.setPointerCapture(e.pointerId); } catch (_) {}
+        stop();
+        timer = setInterval(() => {
+          if (canFarm() && lacikaActive()) action();
+          else stop();
+        }, CONFIG.lacikaHoldIntervalMs);
+      }
+    });
+    ["pointerup", "pointercancel", "pointerleave", "lostpointercapture"]
+      .forEach(ev => btn.addEventListener(ev, stop));
+  }
+
+  // Adott kajából mennyi van összesen a hűtőben.
+  function countFood(foodId) {
+    let n = 0;
+    for (let i = 0; i < game.fridgeSlots; i++) {
+      const c = game.fridge[i];
+      if (c && c.foodId === foodId) n += c.count;
+    }
+    return n;
+  }
+  // Adott kajából levon n darabot a slotokból. true, ha volt elég.
+  function removeFood(foodId, n) {
+    if (countFood(foodId) < n) return false;
+    for (let i = 0; i < game.fridgeSlots && n > 0; i++) {
+      const c = game.fridge[i];
+      if (c && c.foodId === foodId) {
+        const take = Math.min(c.count, n);
+        c.count -= take; n -= take;
+        if (c.count <= 0) game.fridge[i] = null;
+      }
+    }
+    return true;
+  }
+
+  // Lacika aktiválása: 15 húscafat → +(szint×15) mp aktív idő (hosszabbítható).
+  function activateLacika() {
+    if (game.paused || game.state === "gameover") return;
+    if (game.lacikaLevel < 1) return;
+    if (countFood(CONFIG.lacikaActivateFood) < CONFIG.lacikaActivateAmount) return;
+    removeFood(CONFIG.lacikaActivateFood, CONFIG.lacikaActivateAmount);
+    const dur = lacikaDurationMs(game.lacikaLevel);
+    game.lacikaRemainingMs += dur;
+    game.lacikaTotalMs = game.lacikaRemainingMs; // a sáv resetel teljesre
+    setLastGain(`🦾 Lacika aktív! +${Math.round(dur / 1000)} mp`);
+    renderFridge(); renderUpgrades(); updateUI(); scheduleSave();
+  }
+
+  function buyLacika() {
+    const cost = lacikaUpgradeCost(game.lacikaLevel);
+    if (game.gold < cost) return;
+    game.gold -= cost; game.lacikaLevel++;
+    renderUpgrades(); updateUI(); saveGame();
   }
 
   function spawnPopup(icon, label, ev) {
@@ -173,7 +246,7 @@
     if (!feedOne(slotIdx)) return;
     game.feedFlashUntil = performance.now() + 700;
     if (game.hunger <= 0) goToSleep(); else maybeGameOver();
-    renderFridge(); renderUpgrades(); updateUI(); scheduleSave();
+    renderFridge(); renderUpgrades(); updateUI(); pulseLevel(); scheduleSave();
   }
 
   // ⚡ Gyors etetés: automatikusan etet, amíg jól nem lakik / el nem fogy.
@@ -203,7 +276,15 @@
     }
     game.feedFlashUntil = performance.now() + 700;
     if (game.hunger <= 0) goToSleep(); else maybeGameOver();
-    renderFridge(); renderUpgrades(); updateUI(); scheduleSave();
+    renderFridge(); renderUpgrades(); updateUI(); pulseLevel(); scheduleSave();
+  }
+
+  // Rövid felvillanás a húspont-sávon etetéskor (látványos "haladás").
+  function pulseLevel() {
+    if (!el.levelBarFill) return;
+    el.levelBarFill.classList.remove("gain");
+    void el.levelBarFill.offsetWidth; // reflow → animáció újraindul
+    el.levelBarFill.classList.add("gain");
   }
 
   function checkLevelUps() {
@@ -339,6 +420,11 @@
   function step(dt) {
     if (game.paused || game.state === "gameover") return;
 
+    // Lacika visszaszámlálás (ébren is fut)
+    if (game.lacikaRemainingMs > 0) {
+      game.lacikaRemainingMs = Math.max(0, game.lacikaRemainingMs - dt);
+    }
+
     if (game.marhatelep > 0) {
       game.marhaProdElapsed += dt * game.marhatelep;
       while (game.marhaProdElapsed >= CONFIG.marhatelepIntervalMs) {
@@ -426,6 +512,22 @@
     el.levelBarText.textContent = `${Math.floor(game.levelProgressHP)} / ${need} húspont`;
 
     el.goldNum.textContent = Math.floor(game.gold);
+
+    // ── Lacika sáv (csak aktív állapotban) ──
+    if (el.lacikaBar) {
+      if (game.lacikaRemainingMs > 0) {
+        el.lacikaBar.style.display = "block";
+        const w = game.lacikaTotalMs > 0 ? (game.lacikaRemainingMs / game.lacikaTotalMs) * 100 : 0;
+        el.lacikaFill.style.width = Math.max(0, Math.min(100, w)) + "%";
+        el.lacikaText.textContent = `🦾 Lacika: ${fmtTime(game.lacikaRemainingMs)}`;
+      } else {
+        el.lacikaBar.style.display = "none";
+      }
+    }
+    // farm gombok kinézete Lacika alatt
+    const lac = game.lacikaRemainingMs > 0;
+    el.burgerBtn.classList.toggle("lacika-on", lac);
+    el.moneyBtn.classList.toggle("lacika-on", lac);
 
     const sleeping = game.state === "sleeping";
     const hungry = game.state === "hungry";
@@ -529,6 +631,15 @@
     const lCost = lMax ? null : lipoUpgradeCost(game.lipoLevel);
     const lPct = Math.round(lipoReduction(game.lipoLevel) * 100);
 
+    // Lacika
+    const lacCost = lacikaUpgradeCost(game.lacikaLevel);
+    const lacDurS = Math.round(lacikaDurationMs(game.lacikaLevel) / 1000);
+    const huscafat = countFood(CONFIG.lacikaActivateFood);
+    const canBuyLac = g >= lacCost;
+    const canActLac = game.lacikaLevel >= 1
+      && huscafat >= CONFIG.lacikaActivateAmount
+      && !game.paused && game.state !== "gameover";
+
     el.upgList.innerHTML = `
       ${upgCard("🧊","Hűtő",`Szint ${fSlots} · ${fSlots}/${CONFIG.fridgeMaxSlots} slot`,
         fMax ? "Maximális szint" : `Következő slot: ${fCost} 🪙`, "buy-fridge", fMax, fCost != null && g >= fCost)}
@@ -536,6 +647,20 @@
         bMax ? "Maximális szint" : `Következő szint: ${bCost} 🪙`, "buy-bed", bMax, bCost != null && g >= bCost)}
       ${upgCard("🩺","Zsírleszívás",`Szint ${game.lipoLevel} · húspontigény −${lPct}%`,
         lMax ? "Maximális szint" : `Következő kezelés: ${lCost} 🪙`, "buy-lipo", lMax, lCost != null && g >= lCost)}
+      <div class="upg-card">
+        <div class="upg-ic">🦾</div>
+        <div class="upg-body">
+          <div class="upg-title">Lacika</div>
+          <div class="upg-line">${game.lacikaLevel < 1
+            ? "Nyomva-tartva termel! (feloldatlan)"
+            : `Szint ${game.lacikaLevel} · aktív ${lacDurS} mp / aktiválás`}</div>
+          <div class="upg-line accent">Fejlesztés: ${lacCost} 🪙 · Aktiválás: ${CONFIG.lacikaActivateAmount} 🍖 (van: ${huscafat})</div>
+        </div>
+        <div class="upg-actions">
+          <button class="upg-buy" data-upg="buy-lacika" ${canBuyLac ? "" : "disabled"}>${game.lacikaLevel < 1 ? "Feloldás" : "Fejlesztés"}</button>
+          <button class="upg-activate" data-upg="activate-lacika" ${canActLac ? "" : "disabled"}>Aktiválás</button>
+        </div>
+      </div>
     `;
   }
   function upgCard(icon, title, line1, line2, action, maxed, affordable) {
@@ -622,6 +747,8 @@
       if (b.dataset.upg === "buy-fridge") buyFridgeSlot();
       else if (b.dataset.upg === "buy-bed") buyBed();
       else if (b.dataset.upg === "buy-lipo") buyLipo();
+      else if (b.dataset.upg === "buy-lacika") buyLacika();
+      else if (b.dataset.upg === "activate-lacika") activateLacika();
     });
   }
 
@@ -642,8 +769,8 @@
     loadGame();
     setupSprite();
 
-    el.burgerBtn.addEventListener("click", onBurgerClick);
-    el.moneyBtn.addEventListener("click", onMoneyClick);
+    setupFarmButton(el.burgerBtn, produceFood);
+    setupFarmButton(el.moneyBtn, produceMoney);
     el.pauseBtn.addEventListener("click", togglePause);
     el.restartBtn.addEventListener("click", () => resetRun(CONFIG.gameOverKeepUpgrades));
     setupPanels();
