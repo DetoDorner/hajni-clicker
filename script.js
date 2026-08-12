@@ -19,6 +19,9 @@
   const MAX_SLOTS = CONFIG.fridgeMaxSlots;
   const SPRITE_POS = { tl: "0% 0%", tr: "100% 0%", bl: "0% 100%", br: "100% 100%" };
 
+  function randRange(a, b) { return a + Math.random() * (b - a); }
+  let catchingUp = false; // offline visszaszámolás alatt ne legyen FX/esemény
+
   // ── JÁTÉKÁLLAPOT ──────────────────────────────────────────
   let game = null;
 
@@ -57,6 +60,16 @@
       // termelők (idle): { id: {lvl, el} }
       producers: Object.fromEntries(PRODUCERS.map(p => [p.id, { lvl: 0, el: 0 }])),
 
+      // rémálom (zöldségekről) – TARTÓS húspontigény-növelő
+      nightmareBonus: 0,
+      hadNightmare: false,
+
+      // események
+      eventTimer: 0,
+      eventNextMs: randRange(CONFIG.eventMinMs, CONFIG.eventMaxMs),
+      goldRainMs: 0,        // aktív aranyeső hátralévő ideje
+      merchantOffer: null,  // {foodId, qty, price} amikor vándorárus van
+
       // élmény-beállítások
       soundOn: CONFIG.soundDefault,
       vibrateOn: CONFIG.vibrateDefault,
@@ -78,6 +91,7 @@
       "autoFeedBtn","fridgeSlots","buySlotBtn",
       "foodInfoBtn","foodInfoPanel","closeFoodInfo","foodInfoList",
       "comboIndicator","producersList","recipeBtn","recipePanel","closeRecipe","recipeList",
+      "merchantPanel","merchantText","merchantBuy","merchantSkip",
       "upgBtn","upgPanel","closeUpg","upgStatus","upgList","resetAllBtn",
       "soundToggle","vibrateToggle","fxLayer",
       "gameoverPanel","restartBtn",
@@ -109,8 +123,9 @@
     osc.start(t); osc.stop(t + durMs / 1000 + 0.03);
   }
   function sfx(name) {
-    if (!game.soundOn) return;
+    if (!game.soundOn || catchingUp) return;
     switch (name) {
+      case "nightmare": [340, 260, 200, 150].forEach((f, i) => beep(f, 240, "sine", 0.12, i * 0.13)); break;
       case "click":    beep(200 + Math.random() * 50, 55, "square", 0.05); break;
       case "coin":     beep(880, 60, "triangle", 0.07); beep(1320, 55, "triangle", 0.05, 0.04); break;
       case "feed":     beep(300, 90, "sine", 0.11); break;
@@ -124,12 +139,13 @@
     if (game.vibrateOn && navigator.vibrate) { try { navigator.vibrate(pattern); } catch (_) {} }
   }
   function screenShake() {
+    if (catchingUp) return;
     const app = document.querySelector(".app"); if (!app) return;
     app.classList.remove("shake"); void app.offsetWidth; app.classList.add("shake");
     setTimeout(() => app.classList.remove("shake"), 450);
   }
   function confettiBurst(n) {
-    if (!el.fxLayer) return;
+    if (!el.fxLayer || catchingUp) return;
     const colors = ["#ff9d3c", "#ffd24d", "#52c95f", "#ff5a8a", "#5ab0ff", "#c08cff"];
     for (let i = 0; i < (n || 26); i++) {
       const c = document.createElement("div");
@@ -143,7 +159,7 @@
     }
   }
   function bannerFlash(text) {
-    if (!el.fxLayer) return;
+    if (!el.fxLayer || catchingUp) return;
     const b = document.createElement("div");
     b.className = "fx-banner"; b.textContent = text;
     el.fxLayer.appendChild(b);
@@ -165,7 +181,9 @@
 
   function currentFullRequirement() {
     const raw = fullRequirementRaw(game.level);
-    return Math.max(1, Math.round(raw * (1 - lipoReduction(game.lipoLevel))));
+    const reduced = Math.max(1, Math.round(raw * (1 - lipoReduction(game.lipoLevel))));
+    // a rémálom-bónusz TARTÓS: a húspontigény alsó küszöbét emeli
+    return reduced + (game.nightmareBonus | 0);
   }
 
   function fmtTime(ms) {
@@ -238,10 +256,11 @@
   function produceMoney(ev) {
     if (!canFarm()) return;
     bumpCombo();
-    const amt = CONFIG.goldPerClick * comboMult();
+    const rain = game.goldRainMs > 0 ? CONFIG.goldRainMult : 1;
+    const amt = CONFIG.goldPerClick * comboMult() * rain;
     game.gold += amt;
     spawnPopup("🪙", `+${amt}`, ev);
-    setLastGain(`🪙 +${amt} aranypénz`);
+    setLastGain(`🪙 +${amt} aranypénz${rain > 1 ? " (aranyeső!)" : ""}`);
     sfx("coin"); haptic(8);
     updateUI(); scheduleSave();
   }
@@ -347,6 +366,77 @@
     sfx("buy"); haptic(14);
     setLastGain(`${out.icon} ${out.name} elkészült!`);
     renderRecipes(); renderFridge(); renderUpgrades(); updateUI(); scheduleSave();
+  }
+
+  // ============================================================
+  // ESEMÉNYEK
+  // ============================================================
+  function triggerRandomEvent() {
+    if (game.state === "gameover" || game.paused || game.merchantOffer) return;
+    const r = Math.random();
+    if (r < 0.30) eventGoldRain();
+    else if (r < 0.55) eventCoinShower();
+    else if (r < 0.80) eventFoodFeast();
+    else eventMerchant();
+  }
+  function eventGoldRain() {
+    game.goldRainMs = CONFIG.goldRainDurationMs;
+    sfx("jackpot"); confettiBurst(24);
+    bannerFlash("🌟 ARANYESŐ! ×" + CONFIG.goldRainMult + " arany");
+    updateUI();
+  }
+  function eventCoinShower() {
+    const amt = Math.round((15 + game.level * 6) * (2 + Math.random() * 3));
+    game.gold += amt;
+    sfx("coin"); confettiBurst(18);
+    bannerFlash("🍀 Talált pénz +" + amt + " 🪙");
+    updateUI(); scheduleSave();
+  }
+  function eventFoodFeast() {
+    const pool = ["hamburger", "hbmenu", "csirkecomb", "csirke", "oldalas"];
+    const fid = pool[(Math.random() * pool.length) | 0];
+    const want = 5 + ((Math.random() * (game.level + 4)) | 0);
+    let added = 0;
+    for (let i = 0; i < want; i++) { if (addFoodToFridge(fid)) added++; else break; }
+    const f = FOOD_BY_ID[fid];
+    sfx("buy"); confettiBurst(16);
+    bannerFlash(`🎁 Vendégség! +${added} ${f.icon}`);
+    renderFridge(); updateUI(); scheduleSave();
+  }
+  function eventMerchant() {
+    const pool = ["oldalas", "steak", "feldiszno", "csirke"];
+    const fid = pool[(Math.random() * pool.length) | 0];
+    const f = FOOD_BY_ID[fid];
+    const qty = 4 + ((Math.random() * 6) | 0);
+    const price = Math.max(10, Math.round(qty * f.hp * 0.5)); // ~fél arany/HP → jó bolt
+    game.merchantOffer = { foodId: fid, qty, price };
+    sfx("buy");
+    openMerchant();
+    scheduleSave();
+  }
+  function openMerchant() {
+    const o = game.merchantOffer; if (!o || !el.merchantPanel) return;
+    const f = FOOD_BY_ID[o.foodId];
+    el.merchantText.innerHTML = `A vándorárus kínál <b>${o.qty}× ${f.icon} ${f.name}</b>-t <b>${o.price} 🪙</b>-ért.`;
+    el.merchantBuy.disabled = game.gold < o.price;
+    el.merchantPanel.classList.add("open");
+  }
+  function merchantBuy() {
+    const o = game.merchantOffer; if (!o || game.gold < o.price) return;
+    let added = 0;
+    for (let i = 0; i < o.qty; i++) { if (addFoodToFridge(o.foodId)) added++; else break; }
+    if (added === 0) { setLastGain("❌ Nincs hely a hűtőben!"); return; }
+    game.gold -= o.price;
+    game.merchantOffer = null;
+    sfx("buy"); haptic(12);
+    setLastGain(`🚚 Vettél ${added}× ${FOOD_BY_ID[o.foodId].icon}`);
+    if (el.merchantPanel) el.merchantPanel.classList.remove("open");
+    renderFridge(); renderUpgrades(); updateUI(); scheduleSave();
+  }
+  function merchantSkip() {
+    game.merchantOffer = null;
+    if (el.merchantPanel) el.merchantPanel.classList.remove("open");
+    updateUI(); saveGame();
   }
 
   function spawnPopup(icon, label, ev) {
@@ -458,11 +548,18 @@
   // ============================================================
   function wakeUp() {
     if (fridgeIsEmpty()) { doGameOver(); return; }
+    // Néha rémálma van a zöldségekről → TARTÓSAN megugrik a húspontigénye.
+    game.hadNightmare = Math.random() < CONFIG.nightmareChance;
+    if (game.hadNightmare) {
+      const jump = Math.max(1, Math.round(fullRequirementRaw(game.level) * CONFIG.nightmareBonusFactor));
+      game.nightmareBonus += jump;
+    }
     game.state = "hungry";
     game.hunger = currentFullRequirement();
     game.baseRequirement = game.hunger;
     game.hungerPeak = Math.max(1, game.hunger);
     game.hungerCycleElapsed = 0;
+    if (game.hadNightmare) { sfx("nightmare"); haptic([30, 40, 30]); bannerFlash("🥦 RÉMÁLOM! Zöldségek…"); }
   }
 
   function goToSleep() {
@@ -590,6 +687,19 @@
     // Combo lejárása, ha megállt a kattintás
     if (comboCount > 0 && performance.now() - comboLastAt > CONFIG.comboWindowMs) comboCount = 0;
 
+    // Aranyeső buff lejárása
+    if (game.goldRainMs > 0) game.goldRainMs = Math.max(0, game.goldRainMs - dt);
+
+    // Esemény-ütemező (offline visszaszámolás alatt nincs esemény)
+    if (!catchingUp) {
+      game.eventTimer += dt;
+      if (game.eventTimer >= game.eventNextMs) {
+        game.eventTimer = 0;
+        game.eventNextMs = randRange(CONFIG.eventMinMs, CONFIG.eventMaxMs);
+        triggerRandomEvent();
+      }
+    }
+
     // Termelők (idle): szintenként arányosan gyorsabb
     for (const p of PRODUCERS) {
       const st = game.producers[p.id];
@@ -701,6 +811,7 @@
     const lac = game.lacikaRemainingMs > 0;
     el.burgerBtn.classList.toggle("lacika-on", lac);
     el.moneyBtn.classList.toggle("lacika-on", lac);
+    el.moneyBtn.classList.toggle("goldrain-on", game.goldRainMs > 0);
 
     // combo kijelző
     if (el.comboIndicator) {
@@ -722,7 +833,8 @@
       const hp = Math.max(0, game.hunger);
       el.hungerFill.style.width = Math.max(0, Math.min(100, (hp / game.hungerPeak) * 100)) + "%";
       el.hungerText.textContent = Math.ceil(hp) + " HP";
-      el.reqText.textContent = `Még ${Math.ceil(hp)} húspont a teljes jóllakáshoz`;
+      el.reqText.textContent = `Még ${Math.ceil(hp)} húspont a teljes jóllakáshoz`
+        + (game.nightmareBonus > 0 ? ` · 🥦 +${game.nightmareBonus} tartós` : "");
     }
 
     const farmable = canFarm();
@@ -957,6 +1069,7 @@
   function catchUpFrom(sinceTs) {
     let remaining = Math.min(Date.now() - (sinceTs || Date.now()), CONFIG.maxOfflineCatchupMs);
     if (remaining <= 0) return;
+    catchingUp = true;
     let guard = 0;
     const maxGuard = CONFIG.maxOfflineCatchupMs / 1000 + 10;
     while (remaining > 0 && guard < maxGuard) {
@@ -964,6 +1077,7 @@
       remaining -= 1000; guard++;
       if (game.state === "gameover") break;
     }
+    catchingUp = false;
     lastTick = performance.now();
   }
 
@@ -1004,6 +1118,9 @@
     el.soundToggle.addEventListener("click", toggleSound);
     el.vibrateToggle.addEventListener("click", toggleVibrate);
 
+    el.merchantBuy.addEventListener("click", merchantBuy);
+    el.merchantSkip.addEventListener("click", merchantSkip);
+
     el.upgList.addEventListener("click", (e) => {
       const b = e.target.closest("[data-upg]");
       if (!b) return;
@@ -1039,6 +1156,7 @@
     setupPanels();
 
     if (game.state === "gameover") el.gameoverPanel.classList.add("open");
+    if (game.merchantOffer) openMerchant(); // félbehagyott vándorárus visszatöltése
 
     renderFridge(); renderUpgrades(); renderProducers(); updateUI();
 

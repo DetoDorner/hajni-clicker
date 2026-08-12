@@ -119,6 +119,16 @@ const CONFIG = {
   comboStep: 5,         // ennyi kattintásonként +1 szorzó
   comboMaxBonus: 4,     // max bónusz → ×5
 
+  // ── ESEMÉNYEK ──
+  eventMinMs: 45000,        // legalább ennyi idő két esemény között
+  eventMaxMs: 90000,        // legfeljebb ennyi
+  goldRainDurationMs: 12000,// aranyeső hossza
+  goldRainMult: 2,          // aranyeső alatt ennyiszeres arany/kattintás
+
+  // ── RÉMÁLOM (zöldségekről) ──
+  nightmareChance: 0.18,       // ébredésenként ennyi eséllyel rémálom
+  nightmareBonusFactor: 0.30,  // ennyivel ugrik meg TARTÓSAN a húspontigény
+
   // ── ÉLMÉNY (juice) ──
   soundDefault: true,   // hangeffektek alapból be
   vibrateDefault: true, // rezgés alapból be (iPhone-on nincs Vibration API → ott hatástalan)

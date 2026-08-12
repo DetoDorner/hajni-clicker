@@ -303,6 +303,22 @@ body {
   0%,100% { box-shadow: 0 8px 0 #a8801a, 0 0 0 0 rgba(140, 220, 70, 0.55); }
   50%     { box-shadow: 0 8px 0 #a8801a, 0 0 18px 5px rgba(140, 220, 70, 0.55); }
 }
+/* aranyeső aktív a pénz gombon */
+.clicker-btn.money.goldrain-on::after {
+  content: "×2 🌟"; position: absolute; top: 6px; left: 0; right: 0;
+  font-size: 11px; font-weight: 900; color: #3a2408; text-shadow: 0 1px 0 rgba(255,255,255,.4);
+}
+.clicker-btn.money.goldrain-on { animation: goldrainPulse .8s ease-in-out infinite; }
+@keyframes goldrainPulse {
+  0%,100% { box-shadow: 0 8px 0 #a8801a, 0 0 0 0 rgba(255, 210, 77, 0.7); }
+  50%     { box-shadow: 0 8px 0 #a8801a, 0 0 22px 6px rgba(255, 210, 77, 0.7); }
+}
+
+/* Vándorárus modal */
+.merchant-text { font-size: 15px; line-height: 1.5; text-align: center; margin: 6px 0 16px; }
+.merchant-text b { color: var(--accent-2); }
+.merchant-actions { display: flex; flex-direction: column; gap: 8px; }
+.merchant-actions .wide-btn { margin-bottom: 0; }
 .clicker-btn::before {
   content: ""; position: absolute; inset: 0 0 55% 0;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.4), transparent);
