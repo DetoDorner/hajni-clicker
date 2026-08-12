@@ -5,7 +5,7 @@
 // Ha frissítesz valamit, növeld a CACHE_NAME verziószámát.
 // ============================================================
 
-const CACHE_NAME = "hajni-clicker-v5";
+const CACHE_NAME = "hajni-clicker-v6";
 
 // Minden fájl, amit a játék használ. (Nincs képfájl-függőség: emoji ikonok.)
 const CORE_FILES = [

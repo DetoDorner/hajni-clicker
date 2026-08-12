@@ -125,8 +125,8 @@
       setLastGain(`🏭 Marhatelep! (${game.marhatelep})`);
     } else {
       const ok = addFoodToFridge(food.id);
-      spawnPopup(ok ? food.icon : "🈵", ok ? food.name : "Hűtő tele!", ev);
-      setLastGain(ok ? `${food.icon} ${food.name} +1` : "🈵 A hűtő tele van!");
+      spawnPopup(ok ? food.icon : "❌", ok ? food.name : "Hűtő tele!", ev);
+      setLastGain(ok ? `${food.icon} ${food.name} +1` : "❌ A hűtő tele van!");
     }
     renderFridge(); updateUI(); scheduleSave();
   }
@@ -628,9 +628,19 @@
   // ============================================================
   // INDÍTÁS
   // ============================================================
+  // Ha a Hajni-kép betölt, elrejtjük a tartalék emojit (különben "átlátszana"
+  // a kép mögül). Ha a kép hiányzik, marad az emoji.
+  function setupSprite() {
+    const img = new Image();
+    img.onload = () => el.hajniAvatar.classList.add("has-sprite");
+    img.onerror = () => el.hajniAvatar.classList.remove("has-sprite");
+    img.src = "images/hajni.png";
+  }
+
   function init() {
     cacheDom();
     loadGame();
+    setupSprite();
 
     el.burgerBtn.addEventListener("click", onBurgerClick);
     el.moneyBtn.addEventListener("click", onMoneyClick);

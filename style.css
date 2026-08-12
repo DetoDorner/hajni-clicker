@@ -1,21 +1,41 @@
 /* ============================================================
-   style.css – Hajni Burger Clicker (v3)
-   Mobil-first, reszponzív, sötét téma.
+   style.css – Hajni Burger Clicker (v6)
+   Mobil-first, „cozy food-game" kinézet. Sötét, meleg téma.
    ============================================================ */
 
 :root {
-  --bg: #1a1410;
-  --bg2: #241a12;
-  --panel: #2e2117;
-  --panel2: #3a291c;
+  --bg-0: #140f0a;
+  --bg-1: #1e150d;
+  --bg-2: #2a1c10;
+
+  --surface: #2c2016;
+  --surface-2: #362718;
+  --line: #47341f;
+  --line-soft: rgba(255, 200, 130, 0.10);
+
   --accent: #ff9d3c;
-  --accent2: #ffb968;
-  --gold: #ffcf4d;
-  --text: #f6ece0;
-  --muted: #b39c86;
-  --danger: #e5484d;
-  --good: #3fb950;
-  --shadow: 0 8px 24px rgba(0,0,0,.45);
+  --accent-2: #ffc266;
+  --accent-deep: #e07316;
+
+  --gold: #ffd24d;
+  --gold-deep: #d9a520;
+
+  --good: #52c95f;
+  --good-deep: #2f8e3a;
+  --danger: #ff5a5f;
+
+  --text: #fbf1e6;
+  --muted: #c3ab92;
+  --muted-2: #9c8368;
+
+  --r-lg: 24px;
+  --r-md: 16px;
+  --r-sm: 11px;
+
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.45);
+  --shadow-card: 0 6px 18px rgba(0, 0, 0, 0.35);
+  --glow-accent: 0 8px 24px rgba(255, 132, 40, 0.35);
+  --glow-gold: 0 8px 22px rgba(255, 190, 60, 0.32);
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -25,211 +45,378 @@ body {
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   color: var(--text);
   background:
-    radial-gradient(1200px 600px at 50% -10%, #3a2a1c 0%, transparent 60%),
-    linear-gradient(180deg, var(--bg2), var(--bg));
+    radial-gradient(120% 70% at 50% -8%, rgba(255, 150, 60, 0.22) 0%, transparent 55%),
+    radial-gradient(90% 60% at 50% 12%, rgba(255, 100, 40, 0.10) 0%, transparent 60%),
+    linear-gradient(180deg, var(--bg-1) 0%, var(--bg-0) 100%);
   user-select: none; -webkit-user-select: none;
   touch-action: manipulation;
 }
 
 .app {
-  height: 100dvh; max-width: 560px; margin: 0 auto;
+  height: 100dvh; max-width: 480px; margin: 0 auto;
   display: flex; flex-direction: column; position: relative;
-  padding: env(safe-area-inset-top) 12px calc(10px + env(safe-area-inset-bottom));
+  padding: calc(6px + env(safe-area-inset-top)) 14px calc(12px + env(safe-area-inset-bottom));
 }
-
-/* ── FEJLÉC ── */
-.header { padding: 8px 2px 4px; }
-.level-block { margin-bottom: 8px; }
-.level-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-.level-label { font-size: 15px; font-weight: 800; letter-spacing: .5px; }
-.level-label b { color: var(--accent2); font-size: 18px; }
-.gold-pill {
-  background: rgba(255,207,77,.14); border: 1px solid rgba(255,207,77,.4);
-  color: var(--gold); border-radius: 20px; padding: 3px 12px; font-size: 14px; font-weight: 700;
-}
-.level-bar { position: relative; height: 24px; background: #16100b; border: 1px solid var(--panel2); border-radius: 12px; overflow: hidden; }
-.level-bar-fill { height: 100%; width: 0%; border-radius: 12px 0 0 12px; transition: width .25s ease; }
-.level-bar-text {
-  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 800; text-shadow: 0 1px 3px rgba(0,0,0,.75);
-}
-.header-actions { display: flex; gap: 6px; }
-.mini-btn {
-  flex: 1; background: var(--panel); border: 1px solid var(--panel2); color: var(--text);
-  border-radius: 10px; padding: 8px 6px; font-size: 13px; font-weight: 700; cursor: pointer;
-}
-.mini-btn:active:not(:disabled) { transform: scale(.96); }
-.mini-btn:disabled { opacity: .5; }
-
-/* ── SZÍNPAD ── */
-.stage {
-  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 10px; position: relative; min-height: 0;
-}
-
-/* Avatar: 2×2 sprite (images/hajni.png) + emoji tartalék, ha nincs kép */
-.hajni-avatar {
-  width: 168px; height: 168px; border-radius: 26px;
-  background: radial-gradient(circle at 40% 35%, #5a4130, #3a291c 72%);
-  border: 4px solid var(--panel2);
-  box-shadow: var(--shadow), inset 0 0 40px rgba(0,0,0,.4);
-  position: relative; overflow: hidden; transition: transform .2s;
-}
-.hajni-face {
-  position: absolute; inset: 0; z-index: 0;
-  display: flex; align-items: center; justify-content: center; font-size: 84px;
-}
-.hajni-sprite {
-  position: absolute; inset: 0; z-index: 1;
-  background-image: url('images/hajni.png');
-  background-repeat: no-repeat;
-  background-size: 200% 200%;
-  background-position: 0% 0%;
-  transition: background-position .05s;
-}
-.hajni-sprite.go { filter: grayscale(1) brightness(.55); }
-
-.hajni-avatar.state-sleeping { animation: breathe 3.2s ease-in-out infinite; }
-.hajni-avatar.chewing { animation: chew .42s ease-in-out infinite; }
-.hajni-avatar.paused, .hajni-avatar.state-gameover { animation: none; }
-@keyframes breathe { 0%,100%{transform:scale(1)} 50%{transform:scale(1.04)} }
-@keyframes chew { 0%,100%{transform:translateY(0) rotate(-1deg)} 50%{transform:translateY(3px) rotate(1deg)} }
-.hajni-avatar.state-sleeping::after {
-  content: "💤"; position: absolute; top: 2px; right: 6px; font-size: 26px; z-index: 2;
-  animation: floatz 2.6s ease-in-out infinite;
-}
-@keyframes floatz { 0%{transform:translateY(6px);opacity:.3} 50%{opacity:1} 100%{transform:translateY(-8px);opacity:0} }
-
-.hajni-state { font-size: 22px; font-weight: 900; letter-spacing: 2px; }
-.hajni-hint { font-size: 13px; color: var(--muted); min-height: 18px; text-align: center; }
-
-.sleep-row { font-size: 15px; color: var(--muted); }
-.sleep-row b { color: var(--accent2); font-size: 18px; }
-
-.hunger-row { width: 100%; max-width: 360px; }
-.hunger-bar { position: relative; height: 22px; background: #16100b; border: 1px solid var(--panel2); border-radius: 12px; overflow: hidden; }
-.hunger-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #e5484d, #ff7a52); transition: width .2s ease; }
-.hunger-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; text-shadow: 0 1px 2px rgba(0,0,0,.7); }
-.req-text { text-align: center; font-size: 12px; color: var(--muted); margin-top: 4px; }
-
-/* legutóbb szerzett */
-.last-gain {
-  min-height: 22px; font-size: 14px; font-weight: 700; color: var(--accent2);
-  background: rgba(255,157,60,.10); border: 1px solid rgba(255,157,60,.25);
-  border-radius: 20px; padding: 3px 14px; text-align: center; min-width: 120px;
-}
-.last-gain:empty { visibility: hidden; }
-
-/* ── POPUP ── */
-.popup-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 5; }
-.food-popup {
-  position: absolute; transform: translate(-50%,-50%);
-  display: flex; flex-direction: column; align-items: center;
-  animation: popup 1s ease-out forwards;
-}
-.food-popup .pp-ic { font-size: 40px; }
-.food-popup .pp-tx {
-  font-size: 12px; font-weight: 800; color: var(--text);
-  background: rgba(0,0,0,.55); border-radius: 10px; padding: 1px 8px; white-space: nowrap; margin-top: 2px;
-}
-@keyframes popup {
-  0%{transform:translate(-50%,-50%) scale(.4);opacity:0}
-  20%{transform:translate(-50%,-85%) scale(1.15);opacity:1}
-  100%{transform:translate(-50%,-160%) scale(1);opacity:0}
-}
-
-/* ── KÉT FARM GOMB ── */
-.clicker-row { display: flex; gap: 12px; padding: 8px 0 4px; }
-.clicker-btn {
-  flex: 1; height: 96px; border: none; border-radius: 20px; cursor: pointer;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  color: #2a1a0a; transition: transform .06s, box-shadow .06s, filter .2s;
-}
-.clicker-btn .cb-icon { font-size: 42px; line-height: 1; }
-.clicker-btn .cb-label { font-size: 13px; font-weight: 900; letter-spacing: .3px; white-space: nowrap; }
-.clicker-btn.food { background: radial-gradient(circle at 40% 30%, var(--accent2), var(--accent) 70%, #d97a1e); box-shadow: 0 8px 0 #a85c14, var(--shadow); }
-.clicker-btn.money { background: radial-gradient(circle at 40% 30%, #ffe08a, var(--gold) 70%, #d9a520); box-shadow: 0 8px 0 #a8801a, var(--shadow); }
-.clicker-btn:active:not(:disabled) { transform: translateY(5px); box-shadow: 0 3px 0 #8a5010, var(--shadow); }
-.clicker-btn:disabled { filter: grayscale(.85) brightness(.55); cursor: not-allowed; box-shadow: 0 5px 0 #55402a, var(--shadow); }
 
 /* ============================================================
-   PANELEK
+   FEJLÉC
+   ============================================================ */
+.header { padding: 6px 0 2px; }
+.level-block { margin-bottom: 10px; }
+.level-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.level-label {
+  font-size: 13px; font-weight: 800; letter-spacing: 1px;
+  color: var(--muted); text-transform: uppercase;
+  display: inline-flex; align-items: baseline; gap: 6px;
+}
+.level-label b {
+  color: var(--text); font-size: 20px; letter-spacing: 0;
+  background: linear-gradient(180deg, var(--accent-2), var(--accent));
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.gold-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: linear-gradient(180deg, rgba(255, 210, 77, 0.18), rgba(255, 210, 77, 0.06));
+  border: 1px solid rgba(255, 210, 77, 0.45);
+  color: var(--gold); border-radius: 999px; padding: 5px 14px;
+  font-size: 15px; font-weight: 800;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.level-bar {
+  position: relative; height: 26px; border-radius: 999px;
+  background: linear-gradient(180deg, #120c07, #1c130b);
+  border: 1px solid var(--line);
+  overflow: hidden;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.6);
+}
+.level-bar-fill {
+  height: 100%; width: 0%; border-radius: 999px;
+  transition: width .35s cubic-bezier(.4, 1.3, .5, 1);
+  box-shadow: 0 0 14px rgba(255, 160, 60, 0.5);
+  position: relative;
+}
+.level-bar-fill::after {
+  content: ""; position: absolute; inset: 0 0 50% 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35), transparent);
+  border-radius: 999px 999px 0 0;
+}
+.level-bar-text {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; letter-spacing: .3px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+}
+
+.header-actions { display: flex; gap: 8px; }
+.mini-btn {
+  flex: 1; cursor: pointer;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--line); color: var(--text);
+  border-radius: var(--r-sm); padding: 10px 6px;
+  font-size: 13px; font-weight: 700;
+  box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: transform .08s, filter .15s;
+}
+.mini-btn:active:not(:disabled) { transform: translateY(1px) scale(.98); filter: brightness(1.1); }
+.mini-btn:disabled { opacity: .45; }
+
+/* ============================================================
+   SZÍNPAD
+   ============================================================ */
+.stage {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; position: relative; min-height: 0; padding: 6px 0;
+}
+
+/* Hajni avatar: keret + fény + talaj-árnyék */
+.hajni-avatar {
+  --size: min(46vw, 200px);
+  width: var(--size); height: var(--size);
+  border-radius: 30px; position: relative; overflow: hidden;
+  background:
+    radial-gradient(120% 100% at 50% 0%, #6a4c34 0%, #3a281a 70%, #2a1c11 100%);
+  border: 3px solid rgba(255, 190, 120, 0.35);
+  box-shadow:
+    0 0 0 6px rgba(255, 157, 60, 0.08),
+    var(--shadow-soft),
+    inset 0 0 46px rgba(0, 0, 0, 0.45);
+  transition: transform .2s;
+}
+.hajni-avatar::before {
+  /* finom talaj-árnyék az avatar alatt (a szülőn keresztül nem, ezért belső fény) */
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  box-shadow: inset 0 -30px 40px rgba(0, 0, 0, 0.35);
+  pointer-events: none; z-index: 3;
+}
+
+.hajni-face {
+  position: absolute; inset: 0; z-index: 1;
+  display: flex; align-items: center; justify-content: center;
+  font-size: calc(var(--size) * 0.5);
+}
+.hajni-sprite {
+  position: absolute; inset: 0; z-index: 2; display: none;
+  background-image: url('images/hajni.png');
+  background-repeat: no-repeat; background-size: 200% 200%; background-position: 0% 0%;
+  transition: background-position .05s;
+}
+/* Ha a kép betöltött: sprite látszik, az emoji tartalék eltűnik */
+.hajni-avatar.has-sprite .hajni-face { display: none; }
+.hajni-avatar.has-sprite .hajni-sprite { display: block; }
+.hajni-sprite.go { filter: grayscale(1) brightness(.5); }
+
+.hajni-avatar.state-sleeping { animation: breathe 3.4s ease-in-out infinite; }
+.hajni-avatar.chewing { animation: chew .42s ease-in-out infinite; }
+.hajni-avatar.paused, .hajni-avatar.state-gameover { animation: none; }
+@keyframes breathe { 0%,100%{transform:scale(1)} 50%{transform:scale(1.035)} }
+@keyframes chew { 0%,100%{transform:translateY(0) rotate(-1deg)} 50%{transform:translateY(4px) rotate(1deg)} }
+.hajni-avatar.state-sleeping::after {
+  content: "💤"; position: absolute; top: 6px; right: 10px; font-size: 26px; z-index: 4;
+  animation: floatz 2.8s ease-in-out infinite;
+}
+@keyframes floatz { 0%{transform:translateY(6px);opacity:.25} 50%{opacity:1} 100%{transform:translateY(-10px);opacity:0} }
+
+/* Állapot badge */
+.hajni-state {
+  font-size: 16px; font-weight: 900; letter-spacing: 2px;
+  padding: 6px 18px; border-radius: 999px;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.hajni-hint { font-size: 13px; color: var(--muted); min-height: 17px; text-align: center; padding: 0 12px; }
+
+.sleep-row {
+  font-size: 14px; color: var(--muted);
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.sleep-row b {
+  color: var(--accent-2); font-size: 20px; font-variant-numeric: tabular-nums;
+  letter-spacing: .5px;
+}
+
+.hunger-row { width: 100%; max-width: 300px; }
+.hunger-bar {
+  position: relative; height: 24px; border-radius: 999px;
+  background: linear-gradient(180deg, #120c07, #1c130b);
+  border: 1px solid var(--line); overflow: hidden;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.6);
+}
+.hunger-fill {
+  height: 100%; width: 100%; border-radius: 999px;
+  background: linear-gradient(180deg, #ff7a6b, #e5484d);
+  transition: width .25s ease;
+}
+.hunger-text {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+.req-text { text-align: center; font-size: 12px; color: var(--muted); margin-top: 5px; }
+
+/* Legutóbb szerzett – toast pill */
+.last-gain {
+  min-height: 24px; font-size: 14px; font-weight: 800; color: var(--accent-2);
+  background: linear-gradient(180deg, rgba(255, 157, 60, 0.16), rgba(255, 157, 60, 0.06));
+  border: 1px solid rgba(255, 157, 60, 0.32);
+  border-radius: 999px; padding: 5px 18px; text-align: center;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  animation: pop-in .2s ease;
+}
+.last-gain:empty { visibility: hidden; }
+@keyframes pop-in { from { transform: scale(.9); opacity: .4; } to { transform: scale(1); opacity: 1; } }
+
+/* Popup animáció */
+.popup-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 5; }
+.food-popup {
+  position: absolute; transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  animation: popup 1s ease-out forwards; filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5));
+}
+.food-popup .pp-ic { font-size: 44px; }
+.food-popup .pp-tx {
+  font-size: 12px; font-weight: 800; color: var(--text);
+  background: rgba(0, 0, 0, 0.6); border-radius: 999px; padding: 2px 10px; white-space: nowrap;
+}
+@keyframes popup {
+  0% { transform: translate(-50%, -50%) scale(.4); opacity: 0; }
+  20% { transform: translate(-50%, -90%) scale(1.15); opacity: 1; }
+  100% { transform: translate(-50%, -175%) scale(1); opacity: 0; }
+}
+
+/* ============================================================
+   FARM GOMBOK
+   ============================================================ */
+.clicker-row { display: flex; gap: 12px; padding: 10px 0 2px; }
+.clicker-btn {
+  flex: 1; height: 108px; border: none; border-radius: 22px; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  color: #3a2408; position: relative; overflow: hidden;
+  transition: transform .07s, box-shadow .07s, filter .2s;
+}
+.clicker-btn::before {
+  content: ""; position: absolute; inset: 0 0 55% 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.4), transparent);
+  pointer-events: none;
+}
+.clicker-btn .cb-icon { font-size: 46px; line-height: 1; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.2)); }
+.clicker-btn .cb-label { font-size: 13px; font-weight: 900; letter-spacing: .4px; white-space: nowrap; }
+.clicker-btn.food {
+  background: linear-gradient(180deg, var(--accent-2) 0%, var(--accent) 55%, var(--accent-deep) 100%);
+  box-shadow: 0 8px 0 #a8560f, var(--glow-accent);
+}
+.clicker-btn.money {
+  background: linear-gradient(180deg, #ffe58f 0%, var(--gold) 55%, var(--gold-deep) 100%);
+  box-shadow: 0 8px 0 #a8801a, var(--glow-gold);
+}
+.clicker-btn:active:not(:disabled) { transform: translateY(6px); }
+.clicker-btn.food:active:not(:disabled) { box-shadow: 0 2px 0 #a8560f, var(--glow-accent); }
+.clicker-btn.money:active:not(:disabled) { box-shadow: 0 2px 0 #a8801a, var(--glow-gold); }
+.clicker-btn:disabled { filter: grayscale(.8) brightness(.5); cursor: not-allowed; box-shadow: 0 5px 0 rgba(0,0,0,.4); }
+
+/* ============================================================
+   PANELEK (hűtő + fejlesztések)
    ============================================================ */
 .panel {
-  position: fixed; inset: 0; background: linear-gradient(180deg, var(--bg2), var(--bg));
-  transform: translateY(100%); transition: transform .28s ease; z-index: 20;
-  display: flex; flex-direction: column; max-width: 560px; margin: 0 auto;
-  padding: calc(12px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));
+  position: fixed; left: 0; right: 0; bottom: 0; top: 0;
+  max-width: 480px; margin: 0 auto;
+  background: linear-gradient(180deg, var(--bg-2) 0%, var(--bg-0) 100%);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  transform: translateY(100%); transition: transform .32s cubic-bezier(.3, .9, .3, 1);
+  z-index: 20; display: flex; flex-direction: column;
+  padding: 10px 16px calc(16px + env(safe-area-inset-bottom));
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.55);
 }
 .panel.open { transform: translateY(0); }
-.panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
-.panel-head h2 { margin: 0; font-size: 16px; line-height: 1.3; }
-.panel-head .mini-btn { flex: 0 0 auto; width: 44px; }
+.panel::before {
+  content: ""; width: 42px; height: 5px; border-radius: 999px;
+  background: var(--line); margin: 2px auto 12px; flex: 0 0 auto;
+}
+.panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.panel-head h2 { margin: 0; font-size: 16px; line-height: 1.3; font-weight: 800; }
+.panel-head .mini-btn { flex: 0 0 auto; width: 46px; font-size: 16px; }
 .panel-status {
-  font-size: 14px; font-weight: 800; text-align: center;
-  background: var(--panel); border: 1px solid var(--panel2); border-radius: 10px;
-  padding: 8px; margin-bottom: 10px; letter-spacing: .3px;
+  font-size: 14px; font-weight: 800; text-align: center; letter-spacing: .3px;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--line); border-radius: 999px;
+  padding: 9px; margin-bottom: 12px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 .panel-status:empty { display: none; }
-.panel-note { font-size: 12px; color: var(--muted); line-height: 1.4; margin-bottom: 12px; }
-.panel-note b { color: var(--accent2); }
-.panel-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.panel-note { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 12px; }
+.panel-note b { color: var(--accent-2); }
+.panel-row { display: flex; gap: 10px; margin-bottom: 12px; }
 
 .wide-btn {
-  width: 100%; background: var(--accent); color: #2a1a0a; border: none; border-radius: 12px;
-  padding: 12px; font-size: 15px; font-weight: 800; cursor: pointer; margin-bottom: 12px;
+  width: 100%; cursor: pointer; border: none; border-radius: var(--r-md);
+  background: linear-gradient(180deg, var(--accent-2), var(--accent) 70%, var(--accent-deep));
+  color: #3a2408; padding: 13px; font-size: 15px; font-weight: 800; margin-bottom: 12px;
+  box-shadow: var(--glow-accent), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: transform .08s, filter .15s;
 }
-.wide-btn.slim { margin-bottom: 0; padding: 11px 8px; font-size: 14px; }
-.wide-btn.alt { background: var(--panel); color: var(--text); border: 1px solid var(--panel2); }
-.wide-btn.danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); margin-top: 10px; margin-bottom: 0; font-size: 14px; }
-.wide-btn:disabled { background: var(--panel2); color: var(--muted); cursor: not-allowed; }
-.wide-btn.alt:disabled { background: var(--panel); opacity: .5; }
-.wide-btn:active:not(:disabled) { transform: scale(.98); }
+.wide-btn.slim { margin-bottom: 0; padding: 12px 8px; font-size: 14px; }
+.wide-btn.alt {
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  color: var(--text); border: 1px solid var(--line); box-shadow: var(--shadow-card);
+}
+.wide-btn.danger {
+  background: transparent; color: var(--danger); border: 1.5px solid rgba(255, 90, 95, 0.5);
+  box-shadow: none; margin-top: 12px; margin-bottom: 0; font-size: 14px;
+}
+.wide-btn:disabled { filter: grayscale(.7) brightness(.6); opacity: .7; cursor: not-allowed; box-shadow: none; }
+.wide-btn:active:not(:disabled) { transform: translateY(1px) scale(.99); filter: brightness(1.06); }
 
-/* ── HŰTŐ SLOTOK ── */
-.fslots { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-bottom: 8px; }
+/* HŰTŐ SLOTOK */
+.fslots { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 2px 2px 8px; }
+.fslots::-webkit-scrollbar { width: 5px; }
+.fslots::-webkit-scrollbar-thumb { background: var(--line); border-radius: 999px; }
 .fslot {
-  display: flex; align-items: center; gap: 10px; background: var(--panel);
-  border: 1px solid var(--panel2); border-radius: 12px; padding: 8px 10px; min-height: 60px;
+  display: flex; align-items: center; gap: 12px;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--line); border-radius: var(--r-md); padding: 10px; min-height: 64px;
+  box-shadow: var(--shadow-card);
 }
-.fslot.empty { justify-content: center; border-style: dashed; opacity: .55; }
-.fs-empty { color: var(--muted); font-size: 13px; }
-.fs-icon { font-size: 34px; line-height: 1; }
+.fslot.empty {
+  justify-content: center; border-style: dashed; opacity: .5; min-height: 48px;
+  background: transparent; box-shadow: none;
+}
+.fs-empty { color: var(--muted-2); font-size: 12px; letter-spacing: .5px; }
+.fs-icon {
+  flex: 0 0 auto; width: 52px; height: 52px; border-radius: 13px;
+  display: flex; align-items: center; justify-content: center; font-size: 32px;
+  background: radial-gradient(circle at 40% 35%, #46331f, #2a1d11);
+  border: 1px solid var(--line); box-shadow: inset 0 0 14px rgba(0, 0, 0, 0.4);
+}
 .fs-info { flex: 1; min-width: 0; }
-.fs-name { font-weight: 700; font-size: 14px; }
-.fs-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
-.fs-actions { flex: 0 0 auto; display: flex; flex-direction: column; gap: 5px; }
-.fs-feed, .fs-sell { border: none; border-radius: 9px; padding: 8px 10px; font-size: 12px; font-weight: 800; cursor: pointer; white-space: nowrap; min-width: 96px; }
-.fs-feed { background: var(--good); color: #06210d; }
-.fs-sell { background: rgba(255,207,77,.16); color: var(--gold); border: 1px solid rgba(255,207,77,.4); }
-.fs-feed:disabled, .fs-sell:disabled { background: var(--panel2); color: var(--muted); border-color: var(--panel2); cursor: not-allowed; }
+.fs-name { font-weight: 800; font-size: 15px; }
+.fs-sub { font-size: 11px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+.fs-actions { flex: 0 0 auto; display: flex; flex-direction: column; gap: 6px; }
+.fs-feed, .fs-sell {
+  border: none; border-radius: 10px; padding: 9px 12px; font-size: 12px; font-weight: 800;
+  cursor: pointer; white-space: nowrap; min-width: 104px;
+  transition: transform .08s, filter .15s;
+}
+.fs-feed {
+  background: linear-gradient(180deg, var(--good), var(--good-deep)); color: #05230b;
+  box-shadow: 0 3px 10px rgba(82, 201, 95, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+.fs-sell {
+  background: linear-gradient(180deg, rgba(255, 210, 77, 0.2), rgba(255, 210, 77, 0.08));
+  color: var(--gold); border: 1px solid rgba(255, 210, 77, 0.45);
+}
+.fs-feed:disabled, .fs-sell:disabled { filter: grayscale(.8) brightness(.55); cursor: not-allowed; box-shadow: none; }
 .fs-feed:active:not(:disabled), .fs-sell:active:not(:disabled) { transform: scale(.95); }
 
-/* ── FEJLESZTÉS KÁRTYÁK ── */
-.upg-list { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
-.upg-card { display: flex; align-items: center; gap: 12px; background: var(--panel); border: 1px solid var(--panel2); border-radius: 14px; padding: 12px; }
-.upg-ic { font-size: 34px; }
+/* FEJLESZTÉS KÁRTYÁK */
+.upg-list { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+.upg-card {
+  display: flex; align-items: center; gap: 14px;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--line); border-radius: var(--r-md); padding: 14px;
+  box-shadow: var(--shadow-card);
+}
+.upg-ic {
+  flex: 0 0 auto; width: 54px; height: 54px; border-radius: 14px; font-size: 30px;
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 40% 35%, #46331f, #2a1d11);
+  border: 1px solid var(--line); box-shadow: inset 0 0 14px rgba(0, 0, 0, 0.4);
+}
 .upg-body { flex: 1; min-width: 0; }
-.upg-title { font-weight: 800; font-size: 15px; }
-.upg-line { font-size: 12px; color: var(--muted); margin-top: 2px; }
-.upg-line.accent { color: var(--accent2); font-weight: 700; }
-.upg-buy { flex: 0 0 auto; background: var(--accent); color: #2a1a0a; border: none; border-radius: 10px; padding: 10px 14px; font-size: 13px; font-weight: 800; cursor: pointer; }
-.upg-buy:disabled { background: var(--panel2); color: var(--muted); cursor: not-allowed; }
+.upg-title { font-weight: 800; font-size: 16px; }
+.upg-line { font-size: 12px; color: var(--muted); margin-top: 3px; }
+.upg-line.accent { color: var(--accent-2); font-weight: 700; }
+.upg-buy {
+  flex: 0 0 auto; cursor: pointer; border: none; border-radius: 11px; padding: 11px 15px;
+  font-size: 13px; font-weight: 800; color: #3a2408;
+  background: linear-gradient(180deg, var(--accent-2), var(--accent) 70%, var(--accent-deep));
+  box-shadow: 0 3px 10px rgba(255, 132, 40, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: transform .08s, filter .15s;
+}
+.upg-buy:disabled { filter: grayscale(.75) brightness(.6); cursor: not-allowed; box-shadow: none; }
 .upg-buy:active:not(:disabled) { transform: scale(.95); }
 
-/* ── GAME OVER ── */
-.gameover { position: fixed; inset: 0; background: rgba(0,0,0,.82); display: none; align-items: center; justify-content: center; z-index: 40; padding: 24px; }
-.gameover.open { display: flex; }
-.go-card { background: var(--panel); border: 1px solid var(--danger); border-radius: 18px; padding: 28px 22px; text-align: center; max-width: 340px; width: 100%; box-shadow: var(--shadow); }
-.go-skull { font-size: 68px; }
-.go-title { font-size: 30px; font-weight: 900; color: var(--danger); letter-spacing: 2px; margin: 6px 0; }
-.go-info { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
-.go-btn { background: var(--danger); color: #fff; margin-bottom: 0; }
+/* GAME OVER */
+.gameover {
+  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(4px);
+  display: none; align-items: center; justify-content: center; z-index: 40; padding: 26px;
+}
+.gameover.open { display: flex; animation: fade-in .25s ease; }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.go-card {
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border: 1px solid rgba(255, 90, 95, 0.5); border-radius: var(--r-lg);
+  padding: 30px 24px; text-align: center; max-width: 340px; width: 100%;
+  box-shadow: var(--shadow-soft), 0 0 40px rgba(255, 90, 95, 0.15);
+}
+.go-skull { font-size: 72px; animation: floatz-skull 2s ease-in-out infinite; }
+@keyframes floatz-skull { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+.go-title { font-size: 32px; font-weight: 900; color: var(--danger); letter-spacing: 3px; margin: 8px 0; }
+.go-info { font-size: 13px; color: var(--muted); margin-bottom: 22px; line-height: 1.5; }
+.go-btn { background: linear-gradient(180deg, #ff7a7d, var(--danger)); color: #fff; margin-bottom: 0; box-shadow: 0 8px 22px rgba(255, 90, 95, 0.35); }
 
-/* ── kis képernyő ── */
-@media (max-height: 700px) {
-  .hajni-avatar { width: 124px; height: 124px; }
-  .hajni-face { font-size: 62px; }
-  .clicker-btn { height: 80px; }
-  .clicker-btn .cb-icon { font-size: 36px; }
+/* Alacsony képernyő */
+@media (max-height: 720px) {
+  .hajni-avatar { --size: min(38vw, 150px); }
+  .clicker-btn { height: 92px; }
+  .clicker-btn .cb-icon { font-size: 40px; }
+  .stage { gap: 9px; }
 }
