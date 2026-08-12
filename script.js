@@ -44,8 +44,8 @@
       bedLevel: 1,
       lipoLevel: 0,
 
-      // Lacika (tartva-termelő segéd)
-      lacikaLevel: 0,
+      // Lacika (tartva-termelő segéd) – az 1. szinten indul, nincs feloldás
+      lacikaLevel: 1,
       lacikaRemainingMs: 0,   // hátralévő aktív idő
       lacikaTotalMs: 0,       // a sáv skálázásához (aktiváláskori teljes idő)
 
@@ -192,16 +192,16 @@
     return true;
   }
 
-  // Lacika aktiválása: 15 húscafat → +(szint×15) mp aktív idő (hosszabbítható).
+  // Lacika aktiválása: 15 húscafat → azonnal (szint×15) mp aktív idő.
+  // Nem tárazható: az idő a teljes időtartamra ÁLL BE (nem stackelődik).
   function activateLacika() {
     if (game.paused || game.state === "gameover") return;
-    if (game.lacikaLevel < 1) return;
     if (countFood(CONFIG.lacikaActivateFood) < CONFIG.lacikaActivateAmount) return;
     removeFood(CONFIG.lacikaActivateFood, CONFIG.lacikaActivateAmount);
     const dur = lacikaDurationMs(game.lacikaLevel);
-    game.lacikaRemainingMs += dur;
-    game.lacikaTotalMs = game.lacikaRemainingMs; // a sáv resetel teljesre
-    setLastGain(`🦾 Lacika aktív! +${Math.round(dur / 1000)} mp`);
+    game.lacikaRemainingMs = dur;
+    game.lacikaTotalMs = dur;
+    setLastGain(`🦾 Lacika aktív! ${Math.round(dur / 1000)} mp`);
     renderFridge(); renderUpgrades(); updateUI(); scheduleSave();
   }
 
@@ -631,13 +631,11 @@
     const lCost = lMax ? null : lipoUpgradeCost(game.lipoLevel);
     const lPct = Math.round(lipoReduction(game.lipoLevel) * 100);
 
-    // Lacika
+    // Lacika (mint a többi fejlesztés: szintjei vannak, feloldás nélkül)
     const lacCost = lacikaUpgradeCost(game.lacikaLevel);
     const lacDurS = Math.round(lacikaDurationMs(game.lacikaLevel) / 1000);
-    const huscafat = countFood(CONFIG.lacikaActivateFood);
     const canBuyLac = g >= lacCost;
-    const canActLac = game.lacikaLevel >= 1
-      && huscafat >= CONFIG.lacikaActivateAmount
+    const canActLac = countFood(CONFIG.lacikaActivateFood) >= CONFIG.lacikaActivateAmount
       && !game.paused && game.state !== "gameover";
 
     el.upgList.innerHTML = `
@@ -651,14 +649,12 @@
         <div class="upg-ic">🦾</div>
         <div class="upg-body">
           <div class="upg-title">Lacika</div>
-          <div class="upg-line">${game.lacikaLevel < 1
-            ? "Nyomva-tartva termel! (feloldatlan)"
-            : `Szint ${game.lacikaLevel} · aktív ${lacDurS} mp / aktiválás`}</div>
-          <div class="upg-line accent">Fejlesztés: ${lacCost} 🪙 · Aktiválás: ${CONFIG.lacikaActivateAmount} 🍖 (van: ${huscafat})</div>
+          <div class="upg-line">Szint ${game.lacikaLevel} · aktív ${lacDurS} mp / aktiválás</div>
+          <div class="upg-line accent">Következő szint: ${lacCost} 🪙</div>
         </div>
         <div class="upg-actions">
-          <button class="upg-buy" data-upg="buy-lacika" ${canBuyLac ? "" : "disabled"}>${game.lacikaLevel < 1 ? "Feloldás" : "Fejlesztés"}</button>
-          <button class="upg-activate" data-upg="activate-lacika" ${canActLac ? "" : "disabled"}>Aktiválás</button>
+          <button class="upg-buy" data-upg="buy-lacika" ${canBuyLac ? "" : "disabled"}>Vásárlás</button>
+          <button class="upg-activate" data-upg="activate-lacika" ${canActLac ? "" : "disabled"}>${CONFIG.lacikaActivateAmount} 🍖</button>
         </div>
       </div>
     `;
@@ -704,6 +700,7 @@
     }
     game.fridge = fixed;
     game.fridgeSlots = Math.min(Math.max(CONFIG.fridgeStartSlots, game.fridgeSlots | 0), CONFIG.fridgeMaxSlots);
+    game.lacikaLevel = Math.max(1, game.lacikaLevel | 0); // régi mentés (0. szint) → 1
 
     catchUpFrom(saved.lastSaved);
   }

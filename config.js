@@ -165,9 +165,10 @@ function sellPrice(hp, count) {
   return Math.max(1, Math.round(count * hp * CONFIG.sellFactor));
 }
 
-// A KÖVETKEZŐ Lacika-szint ára (level = jelenlegi szint; 0→1 = lacikaBaseCost).
+// A KÖVETKEZŐ Lacika-szint ára (level = jelenlegi szint; 1→2 = lacikaBaseCost).
+// Lacika az 1. szinten indul (nincs feloldás), mint a többi fejlesztés.
 function lacikaUpgradeCost(level) {
-  return Math.round(CONFIG.lacikaBaseCost * Math.pow(CONFIG.lacikaCostGrowth, level));
+  return Math.round(CONFIG.lacikaBaseCost * Math.pow(CONFIG.lacikaCostGrowth, level - 1));
 }
 // Egy aktiválás időtartama (ms) adott Lacika-szinten.
 function lacikaDurationMs(level) {
