@@ -538,6 +538,29 @@ body {
   border-radius: 999px; padding: 1px 7px; margin-left: 4px;
 }
 
+/* ── CÉLOK / ACHIEVEMENTEK ── */
+.ach-list { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.ach-stats {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-md);
+  padding: 12px; margin-bottom: 8px; font-size: 12px; color: var(--muted);
+}
+.ach-stats b { color: var(--accent-2); font-size: 14px; }
+.ach-row {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-md); padding: 10px;
+  opacity: .7;
+}
+.ach-row.done { opacity: 1; border-color: rgba(255, 210, 77, 0.5); }
+.ach-ic { flex: 0 0 auto; font-size: 26px; width: 34px; text-align: center; }
+.ach-body { flex: 1; min-width: 0; }
+.ach-name { font-weight: 800; font-size: 14px; }
+.ach-row.done .ach-name { color: var(--gold); }
+.ach-desc { font-size: 11px; color: var(--muted); margin: 2px 0 5px; }
+.ach-bar { height: 6px; background: #16100b; border-radius: 999px; overflow: hidden; }
+.ach-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 999px; }
+.ach-prog { flex: 0 0 auto; font-size: 11px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+
 /* ── RECEPTEK ── */
 .recipe-list { overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
 .rc-card {

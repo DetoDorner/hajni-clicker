@@ -21,6 +21,7 @@
 
   function randRange(a, b) { return a + Math.random() * (b - a); }
   let catchingUp = false; // offline visszaszámolás alatt ne legyen FX/esemény
+  let achChkTimer = 0;    // achievement-ellenőrzés ütemezése
 
   // ── JÁTÉKÁLLAPOT ──────────────────────────────────────────
   let game = null;
@@ -70,6 +71,10 @@
       goldRainMs: 0,        // aktív aranyeső hátralévő ideje
       merchantOffer: null,  // {foodId, qty, price} amikor vándorárus van
 
+      // célok / statisztika (META – runok között megmarad)
+      achievements: {},     // { id: true } a teljesítettek
+      stats: { foodFarmed: 0, goldEarned: 0, fed: 0, crafted: 0, merchantsBought: 0, bestLevel: 0, nightmares: 0, gamesOver: 0 },
+
       // élmény-beállítások
       soundOn: CONFIG.soundDefault,
       vibrateOn: CONFIG.vibrateDefault,
@@ -92,6 +97,7 @@
       "foodInfoBtn","foodInfoPanel","closeFoodInfo","foodInfoList",
       "comboIndicator","producersList","recipeBtn","recipePanel","closeRecipe","recipeList",
       "merchantPanel","merchantText","merchantBuy","merchantSkip",
+      "achBtn","achPanel","closeAch","achList",
       "upgBtn","upgPanel","closeUpg","upgStatus","upgList","resetAllBtn",
       "soundToggle","vibrateToggle","fxLayer",
       "gameoverPanel","restartBtn",
@@ -244,6 +250,7 @@
       let added = 0;
       for (let i = 0; i < mult; i++) { if (addFoodToFridge(food.id)) added++; else break; }
       const ok = added > 0;
+      game.stats.foodFarmed += added;
       spawnPopup(ok ? food.icon : "❌", ok ? (food.name + (added > 1 ? ` ×${added}` : "")) : "Hűtő tele!", ev);
       setLastGain(ok ? `${food.icon} ${food.name} +${added}` : "❌ A hűtő tele van!");
     }
@@ -259,6 +266,7 @@
     const rain = game.goldRainMs > 0 ? CONFIG.goldRainMult : 1;
     const amt = CONFIG.goldPerClick * comboMult() * rain;
     game.gold += amt;
+    game.stats.goldEarned += amt;
     spawnPopup("🪙", `+${amt}`, ev);
     setLastGain(`🪙 +${amt} aranypénz${rain > 1 ? " (aranyeső!)" : ""}`);
     sfx("coin"); haptic(8);
@@ -362,6 +370,7 @@
     if (!canCraft(r)) return;
     for (const fid in r.cost) removeFood(fid, r.cost[fid]);
     addFoodToFridge(r.out);
+    game.stats.crafted++;
     const out = FOOD_BY_ID[r.out];
     sfx("buy"); haptic(14);
     setLastGain(`${out.icon} ${out.name} elkészült!`);
@@ -428,6 +437,7 @@
     if (added === 0) { setLastGain("❌ Nincs hely a hűtőben!"); return; }
     game.gold -= o.price;
     game.merchantOffer = null;
+    game.stats.merchantsBought++;
     sfx("buy"); haptic(12);
     setLastGain(`🚚 Vettél ${added}× ${FOOD_BY_ID[o.foodId].icon}`);
     if (el.merchantPanel) el.merchantPanel.classList.remove("open");
@@ -437,6 +447,38 @@
     game.merchantOffer = null;
     if (el.merchantPanel) el.merchantPanel.classList.remove("open");
     updateUI(); saveGame();
+  }
+
+  // ============================================================
+  // CÉLOK / ACHIEVEMENTEK
+  // ============================================================
+  function metricValue(m) {
+    const s = game.stats;
+    switch (m) {
+      case "bestLevel": return Math.max(s.bestLevel || 0, game.level);
+      case "foodFarmed": return s.foodFarmed || 0;
+      case "goldEarned": return s.goldEarned || 0;
+      case "crafted": return s.crafted || 0;
+      case "nightmares": return s.nightmares || 0;
+      case "fed": return s.fed || 0;
+      case "marhatelep": return game.marhatelep;
+      case "producerLevels": return PRODUCERS.reduce((a, p) => a + (game.producers[p.id] ? game.producers[p.id].lvl : 0), 0);
+      default: return 0;
+    }
+  }
+  function checkAchievements() {
+    game.stats.bestLevel = Math.max(game.stats.bestLevel || 0, game.level);
+    let any = false;
+    for (const a of ACHIEVEMENTS) {
+      if (game.achievements[a.id]) continue;
+      if (metricValue(a.metric) >= a.need) {
+        game.achievements[a.id] = true;
+        game.gold += a.reward;
+        any = true;
+        if (!catchingUp) { sfx("levelup"); haptic([15, 30, 15]); confettiBurst(24); bannerFlash(`🏆 ${a.name}! +${a.reward} 🪙`); }
+      }
+    }
+    if (any) { updateUI(); renderAchievements(); saveGame(); }
   }
 
   function spawnPopup(icon, label, ev) {
@@ -464,6 +506,7 @@
     game.levelProgressHP += food.hp;
     c.count--;
     if (c.count <= 0) game.fridge[slotIdx] = null;
+    game.stats.fed++;
     checkLevelUps();
     return true;
   }
@@ -553,6 +596,7 @@
     if (game.hadNightmare) {
       const jump = Math.max(1, Math.round(fullRequirementRaw(game.level) * CONFIG.nightmareBonusFactor));
       game.nightmareBonus += jump;
+      game.stats.nightmares++;
     }
     game.state = "hungry";
     game.hunger = currentFullRequirement();
@@ -576,6 +620,8 @@
 
   function doGameOver() {
     game.state = "gameover";
+    game.stats.gamesOver++;
+    game.stats.bestLevel = Math.max(game.stats.bestLevel, game.level);
     sfx("gameover"); haptic([60, 50, 60, 50, 120]);
     updateUI(); renderFridge();
     if (el.gameoverPanel) el.gameoverPanel.classList.add("open");
@@ -604,6 +650,7 @@
       gold: game.gold, fridgeSlots: game.fridgeSlots,
       bedLevel: game.bedLevel, lipoLevel: game.lipoLevel,
       lacikaLevel: game.lacikaLevel, producers: game.producers,
+      achievements: game.achievements, stats: game.stats,
     };
     game = newGame();
     if (keepMeta) Object.assign(game, meta);
@@ -698,6 +745,8 @@
         game.eventNextMs = randRange(CONFIG.eventMinMs, CONFIG.eventMaxMs);
         triggerRandomEvent();
       }
+      achChkTimer += dt;
+      if (achChkTimer >= 1000) { achChkTimer = 0; checkAchievements(); }
     }
 
     // Termelők (idle): szintenként arányosan gyorsabb
@@ -986,6 +1035,35 @@
       <div class="upg-line">${line1}</div><div class="upg-line accent">${line2}</div></div>${btn}</div>`;
   }
 
+  // ── CÉLOK panel renderelése ──
+  function renderAchievements() {
+    if (!el.achList) return;
+    const s = game.stats;
+    const statsHtml = `<div class="ach-stats">
+      <span>🏅 Legjobb szint <b>${Math.max(s.bestLevel, game.level)}</b></span>
+      <span>🍖 Farmolt kaja <b>${s.foodFarmed}</b></span>
+      <span>🪙 Keresett arany <b>${s.goldEarned}</b></span>
+      <span>🍽️ Etetések <b>${s.fed}</b></span>
+      <span>🍱 Receptek <b>${s.crafted}</b></span>
+      <span>🥦 Rémálmok <b>${s.nightmares}</b></span>
+    </div>`;
+    const list = ACHIEVEMENTS.map((a) => {
+      const done = !!game.achievements[a.id];
+      const cur = Math.min(metricValue(a.metric), a.need);
+      const pct = Math.round((cur / a.need) * 100);
+      return `<div class="ach-row ${done ? "done" : ""}">
+        <div class="ach-ic">${done ? a.icon : "🔒"}</div>
+        <div class="ach-body">
+          <div class="ach-name">${a.name}${done ? " ✓" : ""}</div>
+          <div class="ach-desc">${a.desc} · +${a.reward} 🪙</div>
+          <div class="ach-bar"><div class="ach-fill" style="width:${pct}%"></div></div>
+        </div>
+        <div class="ach-prog">${cur}/${a.need}</div>
+      </div>`;
+    }).join("");
+    el.achList.innerHTML = statsHtml + list;
+  }
+
   // ── TERMELŐK renderelése (a Fejlesztés fülön) ──
   function renderProducers() {
     if (!el.producersList) return;
@@ -1054,6 +1132,13 @@
     game.fridgeSlots = Math.min(Math.max(CONFIG.fridgeStartSlots, game.fridgeSlots | 0), CONFIG.fridgeMaxSlots);
     game.lacikaLevel = Math.max(1, game.lacikaLevel | 0); // régi mentés (0. szint) → 1
 
+    // célok / statisztika helyreállítása (régi mentés)
+    if (!game.achievements || typeof game.achievements !== "object") game.achievements = {};
+    game.stats = Object.assign(
+      { foodFarmed: 0, goldEarned: 0, fed: 0, crafted: 0, merchantsBought: 0, bestLevel: 0, nightmares: 0, gamesOver: 0 },
+      game.stats || {}
+    );
+
     // termelők helyreállítása (régi mentés → 0 szint)
     if (!game.producers || typeof game.producers !== "object") game.producers = {};
     for (const p of PRODUCERS) {
@@ -1121,6 +1206,9 @@
     el.merchantBuy.addEventListener("click", merchantBuy);
     el.merchantSkip.addEventListener("click", merchantSkip);
 
+    el.achBtn.addEventListener("click", () => { renderAchievements(); el.achPanel.classList.add("open"); });
+    el.closeAch.addEventListener("click", () => el.achPanel.classList.remove("open"));
+
     el.upgList.addEventListener("click", (e) => {
       const b = e.target.closest("[data-upg]");
       if (!b) return;
@@ -1159,6 +1247,7 @@
     if (game.merchantOffer) openMerchant(); // félbehagyott vándorárus visszatöltése
 
     renderFridge(); renderUpgrades(); renderProducers(); updateUI();
+    checkAchievements(); // offline/korábban átlépett célok begyűjtése
 
     setInterval(saveGame, CONFIG.autosaveMs);
     document.addEventListener("visibilitychange", () => {

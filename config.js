@@ -49,6 +49,21 @@ const RECIPES = [
   { id: "lakoma", out: "lakoma", cost: { steak: 1, oldalas: 1, csirke: 2 } },
 ];
 
+// ── CÉLOK / ACHIEVEMENTEK ───────────────────────────────────
+// metric: melyik értéket figyeli, need: küszöb, reward: aranyjutalom.
+const ACHIEVEMENTS = [
+  { id: "lvl3",    icon: "🌱",   name: "Első falatok",   desc: "Érd el a 3. szintet",        metric: "bestLevel",      need: 3,    reward: 60 },
+  { id: "lvl7",    icon: "🍴",   name: "Feltörekvő",     desc: "Érd el a 7. szintet",        metric: "bestLevel",      need: 7,    reward: 150 },
+  { id: "lvl12",   icon: "👑",   name: "Nagyétkű",       desc: "Érd el a 12. szintet",       metric: "bestLevel",      need: 12,   reward: 400 },
+  { id: "food300", icon: "🍖",   name: "Éléskamra",      desc: "Farmolj 300 kaját",          metric: "foodFarmed",     need: 300,  reward: 120 },
+  { id: "food1500",icon: "📦",   name: "Nagybevásárlás", desc: "Farmolj 1500 kaját",         metric: "foodFarmed",     need: 1500, reward: 350 },
+  { id: "gold800", icon: "💰",   name: "Aranyásó",       desc: "Keress 800 aranyat",         metric: "goldEarned",     need: 800,  reward: 180 },
+  { id: "marha1",  icon: "🏭",   name: "Jackpot!",       desc: "Szerezz Marhatelepet",       metric: "marhatelep",     need: 1,    reward: 250 },
+  { id: "prod5",   icon: "⚙️",   name: "Nagyüzem",       desc: "Termelők összszintje 5",     metric: "producerLevels", need: 5,    reward: 300 },
+  { id: "craft8",  icon: "🍱",   name: "Séf",            desc: "Készíts 8 receptet",         metric: "crafted",        need: 8,    reward: 220 },
+  { id: "night3",  icon: "🥦",   name: "Zöldségfóbia",   desc: "Éld túl 3 rémálmot",         metric: "nightmares",     need: 3,    reward: 200 },
+];
+
 // ── ÁLTALÁNOS BEÁLLÍTÁSOK ───────────────────────────────────
 const CONFIG = {
   saveKey: "hajni_clicker_save_v2",
