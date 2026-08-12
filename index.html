@@ -18,7 +18,10 @@
       <div class="level-block">
         <div class="level-top">
           <span class="level-label">SZINT <b id="levelNum">0</b></span>
-          <span class="gold-pill">🪙 <b id="goldNum">0</b></span>
+          <span class="top-right">
+            <span class="star-pill" id="starPill">⭐ <b id="starNum">0</b></span>
+            <span class="gold-pill">🪙 <b id="goldNum">0</b></span>
+          </span>
         </div>
         <div class="level-bar">
           <div class="level-bar-fill" id="levelBarFill"></div>
@@ -126,6 +129,7 @@
       <button class="toggle-chip" id="vibrateToggle">📳 Rezgés</button>
     </div>
     <button class="wide-btn alt" id="achBtn">🏆 Célok & statisztika</button>
+    <button class="wide-btn prestige" id="prestigeBtn">💫 Újjászületés</button>
     <div class="panel-scroll">
       <div class="upg-list" id="upgList"></div>
       <div class="upg-section-title">🏭 Termelők (automata, idle)</div>
@@ -143,6 +147,18 @@
       </div>
       <div class="modal-note">Kajákból „menü" készíthető — a kimenet <b>több húspontot</b> ér, mint a hozzávalók külön, és helyet is spórol a hűtőben.</div>
       <div class="recipe-list" id="recipeList"></div>
+    </div>
+  </div>
+
+  <!-- ══ ÚJJÁSZÜLETÉS ══ -->
+  <div class="modal" id="prestigePanel">
+    <div class="modal-card">
+      <div class="modal-head"><h2>💫 Újjászületés</h2><button class="mini-btn" id="closePrestige">✕</button></div>
+      <div class="prestige-body" id="prestigeBody"></div>
+      <div class="merchant-actions">
+        <button class="wide-btn prestige" id="prestigeConfirm">Újjászületés</button>
+        <button class="wide-btn alt" id="prestigeCancel">Mégse</button>
+      </div>
     </div>
   </div>
 

@@ -71,9 +71,12 @@
       goldRainMs: 0,        // aktív aranyeső hátralévő ideje
       merchantOffer: null,  // {foodId, qty, price} amikor vándorárus van
 
+      // prestige (META): állandó ⭐ bónusz
+      csillag: 0,
+
       // célok / statisztika (META – runok között megmarad)
       achievements: {},     // { id: true } a teljesítettek
-      stats: { foodFarmed: 0, goldEarned: 0, fed: 0, crafted: 0, merchantsBought: 0, bestLevel: 0, nightmares: 0, gamesOver: 0 },
+      stats: { foodFarmed: 0, goldEarned: 0, fed: 0, crafted: 0, merchantsBought: 0, bestLevel: 0, nightmares: 0, gamesOver: 0, prestiges: 0 },
 
       // élmény-beállítások
       soundOn: CONFIG.soundDefault,
@@ -87,8 +90,9 @@
   const el = {};
   function cacheDom() {
     const ids = [
-      "levelNum","levelBarFill","levelBarText","goldNum",
+      "levelNum","levelBarFill","levelBarText","goldNum","starPill","starNum",
       "lacikaBar","lacikaFill","lacikaText",
+      "prestigeBtn","prestigePanel","closePrestige","prestigeBody","prestigeConfirm","prestigeCancel",
       "hajniFace","hajniSprite","hajniState","hajniHint","hajniAvatar","lastGain",
       "sleepRow","sleepTime","hungerRow","hungerFill","hungerText","reqText",
       "burgerBtn","moneyBtn","pauseBtn","popupLayer",
@@ -225,6 +229,8 @@
 
   function canFarm() { return game.state === "sleeping" && !game.paused; }
   function lacikaActive() { return game.lacikaRemainingMs > 0; }
+  // Állandó prestige-szorzó a csillagokból (húspont + arany).
+  function prestigeMult() { return 1 + (game.csillag | 0) * CONFIG.prestigeBonusPerStar; }
 
   // ── COMBO: gyors egymás utáni kattintás szorzót épít ──
   let comboCount = 0, comboLastAt = 0;
@@ -264,7 +270,7 @@
     if (!canFarm()) return;
     bumpCombo();
     const rain = game.goldRainMs > 0 ? CONFIG.goldRainMult : 1;
-    const amt = CONFIG.goldPerClick * comboMult() * rain;
+    const amt = Math.round(CONFIG.goldPerClick * comboMult() * rain * prestigeMult());
     game.gold += amt;
     game.stats.goldEarned += amt;
     spawnPopup("🪙", `+${amt}`, ev);
@@ -503,7 +509,7 @@
     if (!c || c.count <= 0) return false;
     const food = FOOD_BY_ID[c.foodId];
     game.hunger = Math.max(0, game.hunger - food.hp);
-    game.levelProgressHP += food.hp;
+    game.levelProgressHP += food.hp * prestigeMult(); // ⭐ gyorsabb szintezés
     c.count--;
     if (c.count <= 0) game.fridge[slotIdx] = null;
     game.stats.fed++;
@@ -628,6 +634,42 @@
     saveGame();
   }
 
+  // ── PRESTIGE / ÚJJÁSZÜLETÉS ──
+  // Nullázza a runt ÉS a fejlesztéseket, cserébe állandó ⭐ bónuszt ad.
+  // Megmarad: csillagok, célok, statisztika.
+  function doPrestige() {
+    const gain = prestigeStars(game.level);
+    if (game.level < CONFIG.prestigeMinLevel || gain <= 0) return;
+    const keep = {
+      csillag: (game.csillag | 0) + gain,
+      achievements: game.achievements,
+      stats: game.stats,
+    };
+    game = newGame();
+    Object.assign(game, keep);
+    game.stats.prestiges = (game.stats.prestiges || 0) + 1;
+    if (el.prestigePanel) el.prestigePanel.classList.remove("open");
+    el.upgPanel.classList.remove("open");
+    lastTick = performance.now();
+    setLastGain("");
+    sfx("levelup"); haptic([20, 40, 20, 40]); confettiBurst(44);
+    bannerFlash(`💫 ÚJJÁSZÜLETÉS! +${gain} ⭐`);
+    renderFridge(); renderUpgrades(); renderProducers(); updateUI(); saveGame();
+  }
+  function renderPrestige() {
+    if (!el.prestigeBody) return;
+    const gain = prestigeStars(game.level);
+    const curBonus = Math.round((prestigeMult() - 1) * 100);
+    const newBonus = Math.round((game.csillag + gain) * CONFIG.prestigeBonusPerStar * 100);
+    const can = game.level >= CONFIG.prestigeMinLevel && gain > 0;
+    el.prestigeBody.innerHTML =
+      `<p>Csillagok: <b>${game.csillag} ⭐</b> · állandó bónusz <b>+${curBonus}%</b> húspont & arany</p>
+       <p>Most kapnál: <b>+${gain} ⭐</b> → új bónusz: <b>+${newBonus}%</b></p>
+       <p class="prestige-warn">⚠️ Ez NULLÁZZA a szintet, aranyat, a hűtőt és MINDEN fejlesztést (hűtő, ágy, zsír, Lacika, termelők). A csillagok, célok és statisztika MEGMARADNAK.</p>
+       ${can ? "" : `<p class="prestige-warn">Legalább a ${CONFIG.prestigeMinLevel}. szint kell az újjászületéshez.</p>`}`;
+    el.prestigeConfirm.disabled = !can;
+  }
+
   // TELJES törlés: mindent nulláz (szint, arany, fejlesztések, hűtő) és
   // a mentést is kiüríti. Megerősítést kér.
   function hardReset() {
@@ -650,7 +692,7 @@
       gold: game.gold, fridgeSlots: game.fridgeSlots,
       bedLevel: game.bedLevel, lipoLevel: game.lipoLevel,
       lacikaLevel: game.lacikaLevel, producers: game.producers,
-      achievements: game.achievements, stats: game.stats,
+      achievements: game.achievements, stats: game.stats, csillag: game.csillag,
     };
     game = newGame();
     if (keepMeta) Object.assign(game, meta);
@@ -844,6 +886,10 @@
     el.levelBarText.textContent = `${Math.floor(game.levelProgressHP)} / ${need} húspont`;
 
     el.goldNum.textContent = Math.floor(game.gold);
+    if (el.starPill) {
+      el.starPill.style.display = game.csillag > 0 ? "inline-flex" : "none";
+      el.starNum.textContent = game.csillag;
+    }
 
     // ── Lacika sáv (csak aktív állapotban) ──
     if (el.lacikaBar) {
@@ -1046,6 +1092,7 @@
       <span>🍽️ Etetések <b>${s.fed}</b></span>
       <span>🍱 Receptek <b>${s.crafted}</b></span>
       <span>🥦 Rémálmok <b>${s.nightmares}</b></span>
+      <span>💫 Csillag <b>${game.csillag} ⭐</b></span>
     </div>`;
     const list = ACHIEVEMENTS.map((a) => {
       const done = !!game.achievements[a.id];
@@ -1208,6 +1255,11 @@
 
     el.achBtn.addEventListener("click", () => { renderAchievements(); el.achPanel.classList.add("open"); });
     el.closeAch.addEventListener("click", () => el.achPanel.classList.remove("open"));
+
+    el.prestigeBtn.addEventListener("click", () => { renderPrestige(); el.prestigePanel.classList.add("open"); });
+    el.closePrestige.addEventListener("click", () => el.prestigePanel.classList.remove("open"));
+    el.prestigeCancel.addEventListener("click", () => el.prestigePanel.classList.remove("open"));
+    el.prestigeConfirm.addEventListener("click", doPrestige);
 
     el.upgList.addEventListener("click", (e) => {
       const b = e.target.closest("[data-upg]");

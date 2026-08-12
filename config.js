@@ -144,6 +144,11 @@ const CONFIG = {
   nightmareChance: 0.18,       // ébredésenként ennyi eséllyel rémálom
   nightmareBonusFactor: 0.30,  // ennyivel ugrik meg TARTÓSAN a húspontigény
 
+  // ── PRESTIGE (újjászületés) ──
+  prestigeMinLevel: 5,         // legalább ennyi szint kell az újjászületéshez
+  prestigeLevelPerStar: 4,     // ennyi szintenként 1 ⭐ (csillag)
+  prestigeBonusPerStar: 0.10,  // csillagonként +10% húspont ÉS arany (állandó)
+
   // ── ÉLMÉNY (juice) ──
   soundDefault: true,   // hangeffektek alapból be
   vibrateDefault: true, // rezgés alapból be (iPhone-on nincs Vibration API → ott hatástalan)
@@ -231,6 +236,11 @@ function lacikaDurationMs(level) {
 // Egy termelő KÖVETKEZŐ szintjének ára (level = jelenlegi szint).
 function producerCost(p, level) {
   return Math.round(p.baseCost * Math.pow(p.costGrowth, level));
+}
+
+// Hány ⭐ csillag jár adott szintnél egy újjászületésért.
+function prestigeStars(level) {
+  return Math.floor(level / CONFIG.prestigeLevelPerStar);
 }
 
 // Szintsáv színe a szinthez (a legmagasabb illeszkedő "min" nyer).
