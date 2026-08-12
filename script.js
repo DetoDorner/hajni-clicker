@@ -54,6 +54,9 @@
       marhatelep: 0,
       marhaProdElapsed: 0,
 
+      // termelők (idle): { id: {lvl, el} }
+      producers: Object.fromEntries(PRODUCERS.map(p => [p.id, { lvl: 0, el: 0 }])),
+
       // élmény-beállítások
       soundOn: CONFIG.soundDefault,
       vibrateOn: CONFIG.vibrateDefault,
@@ -74,6 +77,7 @@
       "fridgeBtn","fridgePanel","closeFridge","fridgeHead","fridgeStatus",
       "autoFeedBtn","fridgeSlots","buySlotBtn",
       "foodInfoBtn","foodInfoPanel","closeFoodInfo","foodInfoList",
+      "comboIndicator","producersList","recipeBtn","recipePanel","closeRecipe","recipeList",
       "upgBtn","upgPanel","closeUpg","upgStatus","upgList","resetAllBtn",
       "soundToggle","vibrateToggle","fxLayer",
       "gameoverPanel","restartBtn",
@@ -198,17 +202,32 @@
   function canFarm() { return game.state === "sleeping" && !game.paused; }
   function lacikaActive() { return game.lacikaRemainingMs > 0; }
 
+  // ── COMBO: gyors egymás utáni kattintás szorzót épít ──
+  let comboCount = 0, comboLastAt = 0;
+  function bumpCombo() {
+    const now = performance.now();
+    comboCount = (now - comboLastAt <= CONFIG.comboWindowMs) ? comboCount + 1 : 1;
+    comboLastAt = now;
+  }
+  function comboMult() {
+    return 1 + Math.min(Math.floor(comboCount / CONFIG.comboStep), CONFIG.comboMaxBonus);
+  }
+
   function produceFood(ev) {
     if (!canFarm()) return;
+    bumpCombo();
+    const mult = comboMult();
     const food = rollFood();
     if (food.type === "building") {
-      game.marhatelep++;
-      spawnPopup(food.icon, food.name, ev);
+      game.marhatelep += mult;
+      spawnPopup(food.icon, food.name + (mult > 1 ? ` ×${mult}` : ""), ev);
       setLastGain(`🏭 Marhatelep! (${game.marhatelep})`);
     } else {
-      const ok = addFoodToFridge(food.id);
-      spawnPopup(ok ? food.icon : "❌", ok ? food.name : "Hűtő tele!", ev);
-      setLastGain(ok ? `${food.icon} ${food.name} +1` : "❌ A hűtő tele van!");
+      let added = 0;
+      for (let i = 0; i < mult; i++) { if (addFoodToFridge(food.id)) added++; else break; }
+      const ok = added > 0;
+      spawnPopup(ok ? food.icon : "❌", ok ? (food.name + (added > 1 ? ` ×${added}` : "")) : "Hűtő tele!", ev);
+      setLastGain(ok ? `${food.icon} ${food.name} +${added}` : "❌ A hűtő tele van!");
     }
     const jackpot = food.id === "marhatelep" || food.id === "marha";
     if (jackpot) { sfx("jackpot"); haptic([20, 40, 20]); screenShake(); }
@@ -218,9 +237,11 @@
 
   function produceMoney(ev) {
     if (!canFarm()) return;
-    game.gold += CONFIG.goldPerClick;
-    spawnPopup("🪙", `+${CONFIG.goldPerClick}`, ev);
-    setLastGain(`🪙 +${CONFIG.goldPerClick} aranypénz`);
+    bumpCombo();
+    const amt = CONFIG.goldPerClick * comboMult();
+    game.gold += amt;
+    spawnPopup("🪙", `+${amt}`, ev);
+    setLastGain(`🪙 +${amt} aranypénz`);
     sfx("coin"); haptic(8);
     updateUI(); scheduleSave();
   }
@@ -290,6 +311,42 @@
     game.gold -= cost; game.lacikaLevel++;
     sfx("buy"); haptic(10);
     renderUpgrades(); updateUI(); saveGame();
+  }
+
+  function buyProducer(id) {
+    const p = PRODUCERS.find((x) => x.id === id); if (!p) return;
+    const st = game.producers[id];
+    const cost = producerCost(p, st.lvl);
+    if (game.gold < cost) return;
+    game.gold -= cost; st.lvl++;
+    sfx("buy"); haptic(10);
+    renderProducers(); updateUI(); saveGame();
+  }
+
+  // ── RECEPTEK ──
+  // Van-e hely a hűtőben egy adott kajának (azonos stack <limit vagy üres slot).
+  function foodStackCanAccept(foodId) {
+    for (let i = 0; i < game.fridgeSlots; i++) {
+      const c = game.fridge[i];
+      if (c && c.foodId === foodId && c.count < CONFIG.slotStackLimit) return true;
+    }
+    for (let i = 0; i < game.fridgeSlots; i++) if (!game.fridge[i]) return true;
+    return false;
+  }
+  function canCraft(r) {
+    if (game.paused || game.state === "gameover") return false;
+    for (const fid in r.cost) if (countFood(fid) < r.cost[fid]) return false;
+    return foodStackCanAccept(r.out);
+  }
+  function craftRecipe(id) {
+    const r = RECIPES.find((x) => x.id === id); if (!r) return;
+    if (!canCraft(r)) return;
+    for (const fid in r.cost) removeFood(fid, r.cost[fid]);
+    addFoodToFridge(r.out);
+    const out = FOOD_BY_ID[r.out];
+    sfx("buy"); haptic(14);
+    setLastGain(`${out.icon} ${out.name} elkészült!`);
+    renderRecipes(); renderFridge(); renderUpgrades(); updateUI(); scheduleSave();
   }
 
   function spawnPopup(icon, label, ev) {
@@ -449,6 +506,7 @@
     const meta = {
       gold: game.gold, fridgeSlots: game.fridgeSlots,
       bedLevel: game.bedLevel, lipoLevel: game.lipoLevel,
+      lacikaLevel: game.lacikaLevel, producers: game.producers,
     };
     game = newGame();
     if (keepMeta) Object.assign(game, meta);
@@ -527,6 +585,17 @@
     // Lacika visszaszámlálás (ébren is fut)
     if (game.lacikaRemainingMs > 0) {
       game.lacikaRemainingMs = Math.max(0, game.lacikaRemainingMs - dt);
+    }
+
+    // Combo lejárása, ha megállt a kattintás
+    if (comboCount > 0 && performance.now() - comboLastAt > CONFIG.comboWindowMs) comboCount = 0;
+
+    // Termelők (idle): szintenként arányosan gyorsabb
+    for (const p of PRODUCERS) {
+      const st = game.producers[p.id];
+      if (!st || st.lvl <= 0) continue;
+      st.el += dt * st.lvl;
+      while (st.el >= p.intervalMs) { st.el -= p.intervalMs; addFoodToFridge(p.foodId); }
     }
 
     if (game.marhatelep > 0) {
@@ -632,6 +701,17 @@
     const lac = game.lacikaRemainingMs > 0;
     el.burgerBtn.classList.toggle("lacika-on", lac);
     el.moneyBtn.classList.toggle("lacika-on", lac);
+
+    // combo kijelző
+    if (el.comboIndicator) {
+      const cm = comboMult();
+      if (comboCount > 0 && cm > 1 && game.state === "sleeping" && !game.paused) {
+        el.comboIndicator.style.display = "block";
+        el.comboIndicator.textContent = `🔥 COMBO ×${cm}`;
+      } else {
+        el.comboIndicator.style.display = "none";
+      }
+    }
 
     const sleeping = game.state === "sleeping";
     const hungry = game.state === "hungry";
@@ -773,7 +853,7 @@
   }
   function renderFoodInfo() {
     if (!el.foodInfoList) return;
-    el.foodInfoList.innerHTML = FOODS.map((f) => {
+    el.foodInfoList.innerHTML = FOODS.filter((f) => !f.craft).map((f) => {
       const pct = fmtDropPct((f.drop / DROP_TOTAL) * 100);
       const hp = f.type === "building" ? "—" : `${f.hp}`;
       const tag = f.type === "building" ? ` <span class="fi-tag">termelő</span>` : "";
@@ -792,6 +872,40 @@
     return `<div class="upg-card"><div class="upg-ic">${icon}</div>
       <div class="upg-body"><div class="upg-title">${title}</div>
       <div class="upg-line">${line1}</div><div class="upg-line accent">${line2}</div></div>${btn}</div>`;
+  }
+
+  // ── TERMELŐK renderelése (a Fejlesztés fülön) ──
+  function renderProducers() {
+    if (!el.producersList) return;
+    const g = game.gold;
+    el.producersList.innerHTML = PRODUCERS.map((p) => {
+      const st = game.producers[p.id];
+      const cost = producerCost(p, st.lvl);
+      const rate = st.lvl > 0
+        ? `${p.icon} ~${(p.intervalMs / 1000 / st.lvl).toFixed(1)} mp/db`
+        : "nincs megvéve";
+      return upgCard(p.icon, p.name, `Szint ${st.lvl} · ${rate}`,
+        `Következő szint: ${cost} 🪙`, "prod:" + p.id, false, g >= cost);
+    }).join("");
+  }
+
+  // ── RECEPTEK renderelése ──
+  function renderRecipes() {
+    if (!el.recipeList) return;
+    el.recipeList.innerHTML = RECIPES.map((r) => {
+      const out = FOOD_BY_ID[r.out];
+      const ings = Object.keys(r.cost).map((fid) => {
+        const f = FOOD_BY_ID[fid], have = countFood(fid), need = r.cost[fid];
+        return `<span class="rc-ing ${have >= need ? "" : "lack"}">${f.icon} ${need} <em>(${have})</em></span>`;
+      }).join("");
+      const ok = canCraft(r);
+      return `<div class="rc-card">
+        <div class="rc-out"><span class="rc-oic">${out.icon}</span>
+          <div><div class="rc-name">${out.name}</div><div class="rc-hp">${out.hp} HP</div></div></div>
+        <div class="rc-ings">${ings}</div>
+        <button class="rc-make" data-recipe="${r.id}" ${ok ? "" : "disabled"}>Elkészít</button>
+      </div>`;
+    }).join("");
   }
 
   // ============================================================
@@ -828,6 +942,15 @@
     game.fridgeSlots = Math.min(Math.max(CONFIG.fridgeStartSlots, game.fridgeSlots | 0), CONFIG.fridgeMaxSlots);
     game.lacikaLevel = Math.max(1, game.lacikaLevel | 0); // régi mentés (0. szint) → 1
 
+    // termelők helyreállítása (régi mentés → 0 szint)
+    if (!game.producers || typeof game.producers !== "object") game.producers = {};
+    for (const p of PRODUCERS) {
+      const st = game.producers[p.id];
+      game.producers[p.id] = (st && typeof st === "object")
+        ? { lvl: Math.max(0, st.lvl | 0), el: +st.el || 0 }
+        : { lvl: 0, el: 0 };
+    }
+
     catchUpFrom(saved.lastSaved);
   }
 
@@ -850,8 +973,19 @@
   function setupPanels() {
     el.fridgeBtn.addEventListener("click", () => { renderFridge(); updateUI(); el.fridgePanel.classList.add("open"); });
     el.closeFridge.addEventListener("click", () => el.fridgePanel.classList.remove("open"));
-    el.upgBtn.addEventListener("click", () => { renderUpgrades(); updateUI(); el.upgPanel.classList.add("open"); });
+    el.upgBtn.addEventListener("click", () => { renderUpgrades(); renderProducers(); updateUI(); el.upgPanel.classList.add("open"); });
     el.closeUpg.addEventListener("click", () => el.upgPanel.classList.remove("open"));
+    el.producersList.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-upg]");
+      if (b && b.dataset.upg.startsWith("prod:")) buyProducer(b.dataset.upg.slice(5));
+    });
+
+    el.recipeBtn.addEventListener("click", () => { renderRecipes(); el.recipePanel.classList.add("open"); });
+    el.closeRecipe.addEventListener("click", () => el.recipePanel.classList.remove("open"));
+    el.recipeList.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-recipe]");
+      if (b) craftRecipe(b.dataset.recipe);
+    });
     el.resetAllBtn.addEventListener("click", hardReset);
 
     el.autoFeedBtn.addEventListener("click", autoFeed);
@@ -906,7 +1040,7 @@
 
     if (game.state === "gameover") el.gameoverPanel.classList.add("open");
 
-    renderFridge(); renderUpgrades(); updateUI();
+    renderFridge(); renderUpgrades(); renderProducers(); updateUI();
 
     setInterval(saveGame, CONFIG.autosaveMs);
     document.addEventListener("visibilitychange", () => {

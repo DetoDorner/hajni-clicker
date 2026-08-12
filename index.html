@@ -62,6 +62,9 @@
       <div class="last-gain" id="lastGain"></div>
     </div>
 
+    <!-- combo kijelző (gyors kattintásnál) -->
+    <div class="combo-indicator" id="comboIndicator"></div>
+
     <!-- ── KÉT FARM GOMB ── -->
     <div class="clicker-row">
       <button class="clicker-btn food" id="burgerBtn">
@@ -90,7 +93,8 @@
     </div>
     <div class="fslots" id="fridgeSlots"></div>
     <div class="fridge-foot">
-      <button class="info-btn" id="foodInfoBtn">ℹ️ Milyen kaják vannak?</button>
+      <button class="info-btn" id="recipeBtn">🍱 Receptek</button>
+      <button class="info-btn" id="foodInfoBtn">ℹ️ Kaja infó</button>
     </div>
   </div>
 
@@ -121,8 +125,24 @@
       <button class="toggle-chip" id="soundToggle">🔊 Hang</button>
       <button class="toggle-chip" id="vibrateToggle">📳 Rezgés</button>
     </div>
-    <div class="upg-list" id="upgList"></div>
-    <button class="wide-btn danger" id="resetAllBtn">🗑️ Teljes játék törlése (nulláról)</button>
+    <div class="panel-scroll">
+      <div class="upg-list" id="upgList"></div>
+      <div class="upg-section-title">🏭 Termelők (automata, idle)</div>
+      <div class="upg-list" id="producersList"></div>
+      <button class="wide-btn danger" id="resetAllBtn">🗑️ Teljes játék törlése (nulláról)</button>
+    </div>
+  </div>
+
+  <!-- ══ RECEPTEK ══ -->
+  <div class="modal" id="recipePanel">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2>🍱 Receptek</h2>
+        <button class="mini-btn" id="closeRecipe">✕</button>
+      </div>
+      <div class="modal-note">Kajákból „menü" készíthető — a kimenet <b>több húspontot</b> ér, mint a hozzávalók külön, és helyet is spórol a hűtőben.</div>
+      <div class="recipe-list" id="recipeList"></div>
+    </div>
   </div>
 
   <!-- ══ GAME OVER ══ -->

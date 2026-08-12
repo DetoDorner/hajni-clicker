@@ -27,7 +27,26 @@ const FOODS = [
   { id: "feldiszno",  name: "Fél disznó",          icon: "🐖", drop: 6,    hp: 65,  type: "food" },
   { id: "malac",      name: "Sült malac egészben", icon: "🐷", drop: 3,    hp: 100, type: "food" },
   { id: "marha",      name: "Marha",               icon: "🐄", drop: 1,    hp: 160, type: "food" },
+  // Recept-kimenetek: NEM esnek a gombból (drop 0), csak recepttel készülnek.
+  { id: "menu",       name: "Hajni Menü",          icon: "🍱", drop: 0,    hp: 50,  type: "food", craft: true },
+  { id: "lakoma",     name: "Lakoma tál",          icon: "🍲", drop: 0,    hp: 140, type: "food", craft: true },
   { id: "marhatelep", name: "Marhatelep",          icon: "🏭", drop: 0.3,  hp: 0,   type: "building" },
+];
+
+// ── TERMELŐK (idle, mint a Marhatelep) ──────────────────────
+// Aranyért vehető, szintezhető. Szintenként arányosan gyorsabb.
+const PRODUCERS = [
+  { id: "burgerbake", name: "Burgersütöde", icon: "🍔", foodId: "hamburger", baseCost: 60,  costGrowth: 1.40, intervalMs: 8000 },
+  { id: "csirkefarm", name: "Csirkefarm",   icon: "🐔", foodId: "csirke",    baseCost: 220, costGrowth: 1.45, intervalMs: 12000 },
+  { id: "steakhaz",   name: "Steakház",     icon: "🥩", foodId: "steak",     baseCost: 900, costGrowth: 1.50, intervalMs: 20000 },
+];
+
+// ── RECEPTEK ────────────────────────────────────────────────
+// Kajákból „menü" készíthető: a kimenet TÖBB húspontot ér, mint a
+// hozzávalók külön-külön (jutalom), + helyet spórol a hűtőben.
+const RECIPES = [
+  { id: "menu",   out: "menu",   cost: { hamburger: 2, hbmenu: 2, csirkecomb: 2 } },
+  { id: "lakoma", out: "lakoma", cost: { steak: 1, oldalas: 1, csirke: 2 } },
 ];
 
 // ── ÁLTALÁNOS BEÁLLÍTÁSOK ───────────────────────────────────
@@ -94,6 +113,11 @@ const CONFIG = {
   // true = Game Over után a megvett fejlesztések (hűtő/ágy/zsír) és az
   // aranypénz MEGMARADNAK (meta-progresszió). false = teljes nulláról.
   gameOverKeepUpgrades: true,
+
+  // ── COMBO (gyors kattintás szorzó) ──
+  comboWindowMs: 900,   // ennyin belüli kattintás folytatja a combót
+  comboStep: 5,         // ennyi kattintásonként +1 szorzó
+  comboMaxBonus: 4,     // max bónusz → ×5
 
   // ── ÉLMÉNY (juice) ──
   soundDefault: true,   // hangeffektek alapból be
@@ -177,6 +201,11 @@ function lacikaUpgradeCost(level) {
 // Egy aktiválás időtartama (ms) adott Lacika-szinten.
 function lacikaDurationMs(level) {
   return level * CONFIG.lacikaSecondsPerLevel * 1000;
+}
+
+// Egy termelő KÖVETKEZŐ szintjének ára (level = jelenlegi szint).
+function producerCost(p, level) {
+  return Math.round(p.baseCost * Math.pow(p.costGrowth, level));
 }
 
 // Szintsáv színe a szinthez (a legmagasabb illeszkedő "min" nyer).

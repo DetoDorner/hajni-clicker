@@ -416,8 +416,26 @@ body {
 .fs-feed:disabled, .fs-sell:disabled { filter: grayscale(.8) brightness(.55); cursor: not-allowed; box-shadow: none; }
 .fs-feed:active:not(:disabled), .fs-sell:active:not(:disabled) { transform: scale(.95); }
 
+/* combo kijelző */
+.combo-indicator {
+  display: none; align-self: center; margin: 2px auto 0;
+  font-size: 15px; font-weight: 900; letter-spacing: .5px; color: #fff;
+  background: linear-gradient(180deg, #ff8a3c, #ff5a3c);
+  border: 1px solid rgba(255,255,255,.35); border-radius: 999px; padding: 4px 16px;
+  box-shadow: 0 4px 14px rgba(255,90,40,.5), inset 0 1px 0 rgba(255,255,255,.4);
+  animation: combo-pulse .5s ease-in-out infinite;
+}
+@keyframes combo-pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+
+/* görgethető panel-tartalom (Fejlesztés) */
+.panel-scroll { flex: 1; overflow-y: auto; min-height: 0; display: flex; flex-direction: column; padding-bottom: 6px; }
+.upg-section-title {
+  font-size: 13px; font-weight: 800; color: var(--accent-2); letter-spacing: .5px;
+  margin: 16px 2px 10px; padding-top: 12px; border-top: 1px solid var(--line);
+}
+
 /* FEJLESZTÉS KÁRTYÁK */
-.upg-list { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+.upg-list { display: flex; flex-direction: column; gap: 12px; }
 .upg-card {
   display: flex; align-items: center; gap: 14px;
   background: linear-gradient(180deg, var(--surface-2), var(--surface));
@@ -503,6 +521,37 @@ body {
   background: rgba(255, 210, 77, 0.15); border: 1px solid rgba(255, 210, 77, 0.4);
   border-radius: 999px; padding: 1px 7px; margin-left: 4px;
 }
+
+/* ── RECEPTEK ── */
+.recipe-list { overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+.rc-card {
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.rc-out { display: flex; align-items: center; gap: 12px; }
+.rc-oic {
+  width: 48px; height: 48px; border-radius: 12px; font-size: 28px;
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 40% 35%, #46331f, #2a1d11); border: 1px solid var(--line);
+}
+.rc-name { font-weight: 800; font-size: 15px; }
+.rc-hp { font-size: 12px; color: var(--accent-2); font-weight: 700; margin-top: 2px; }
+.rc-ings { display: flex; flex-wrap: wrap; gap: 6px; }
+.rc-ing {
+  font-size: 13px; font-weight: 700; color: var(--good);
+  background: rgba(82,201,95,.12); border: 1px solid rgba(82,201,95,.4);
+  border-radius: 999px; padding: 3px 10px;
+}
+.rc-ing.lack { color: var(--danger); background: rgba(229,72,77,.12); border-color: rgba(229,72,77,.4); }
+.rc-ing em { color: var(--muted); font-style: normal; }
+.rc-make {
+  cursor: pointer; border: none; border-radius: 11px; padding: 11px; font-size: 14px; font-weight: 800;
+  color: #3a2408; background: linear-gradient(180deg, var(--accent-2), var(--accent) 70%, var(--accent-deep));
+  box-shadow: 0 3px 10px rgba(255,132,40,.3), inset 0 1px 0 rgba(255,255,255,.3);
+}
+.rc-make:disabled { filter: grayscale(.7) brightness(.6); cursor: not-allowed; box-shadow: none; }
+.rc-make:active:not(:disabled) { transform: scale(.98); }
 
 /* GAME OVER */
 .gameover {
