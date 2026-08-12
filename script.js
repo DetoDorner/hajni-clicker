@@ -69,6 +69,7 @@
       "burgerBtn","moneyBtn","pauseBtn","popupLayer",
       "fridgeBtn","fridgePanel","closeFridge","fridgeHead","fridgeStatus",
       "autoFeedBtn","fridgeSlots","buySlotBtn",
+      "foodInfoBtn","foodInfoPanel","closeFoodInfo","foodInfoList",
       "upgBtn","upgPanel","closeUpg","upgStatus","upgList","resetAllBtn",
       "gameoverPanel","restartBtn",
     ];
@@ -659,6 +660,27 @@
       </div>
     `;
   }
+  // ── KAJA-INFÓ: az összes kaja, húspontja és kb. esélye ──
+  function fmtDropPct(p) {
+    if (p >= 10) return Math.round(p) + "%";
+    if (p >= 1) return p.toFixed(1) + "%";
+    if (p >= 0.01) return p.toFixed(2) + "%";
+    return "<0.01%";
+  }
+  function renderFoodInfo() {
+    if (!el.foodInfoList) return;
+    el.foodInfoList.innerHTML = FOODS.map((f) => {
+      const pct = fmtDropPct((f.drop / DROP_TOTAL) * 100);
+      const hp = f.type === "building" ? "—" : `${f.hp}`;
+      const tag = f.type === "building" ? ` <span class="fi-tag">termelő</span>` : "";
+      return `<div class="fi-row">
+        <span class="fi-nm"><span class="fi-ic">${f.icon}</span>${f.name}${tag}</span>
+        <span class="fi-hp">${hp}</span>
+        <span class="fi-pc">${pct}</span>
+      </div>`;
+    }).join("");
+  }
+
   function upgCard(icon, title, line1, line2, action, maxed, affordable) {
     const btn = maxed
       ? `<button class="upg-buy" disabled>MAX</button>`
@@ -737,6 +759,9 @@
       if (sb) { sellSlot(+sb.dataset.sell); return; }
     });
     el.buySlotBtn.addEventListener("click", buyFridgeSlot);
+
+    el.foodInfoBtn.addEventListener("click", () => { renderFoodInfo(); el.foodInfoPanel.classList.add("open"); });
+    el.closeFoodInfo.addEventListener("click", () => el.foodInfoPanel.classList.remove("open"));
 
     el.upgList.addEventListener("click", (e) => {
       const b = e.target.closest("[data-upg]");
