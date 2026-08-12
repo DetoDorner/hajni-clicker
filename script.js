@@ -81,6 +81,7 @@
       // élmény-beállítások
       soundOn: CONFIG.soundDefault,
       vibrateOn: CONFIG.vibrateDefault,
+      musicOn: CONFIG.musicDefault,
 
       lastSaved: Date.now(),
     };
@@ -103,7 +104,7 @@
       "merchantPanel","merchantText","merchantBuy","merchantSkip",
       "achBtn","achPanel","closeAch","achList",
       "upgBtn","upgPanel","closeUpg","upgStatus","upgList","resetAllBtn",
-      "soundToggle","vibrateToggle","fxLayer",
+      "musicToggle","soundToggle","vibrateToggle","fxLayer","bgMusic",
       "gameoverPanel","restartBtn",
     ];
     ids.forEach(id => el[id] = document.getElementById(id));
@@ -740,10 +741,27 @@
     renderFridge(); updateUI(); saveGame();
   }
 
-  // ── Hang / rezgés kapcsoló ──
+  // ── Zene / hang / rezgés kapcsoló ──
+  // A böngészők (főleg iOS) csak felhasználói koppintás UTÁN engedik a zenét,
+  // ezért az első interakciónál indítjuk el.
+  function tryStartMusic() {
+    if (!el.bgMusic || !game.musicOn) return;
+    el.bgMusic.volume = CONFIG.musicVolume;
+    if (el.bgMusic.paused) { const p = el.bgMusic.play(); if (p && p.catch) p.catch(() => {}); }
+  }
+  function toggleMusic() {
+    game.musicOn = !game.musicOn;
+    if (game.musicOn) tryStartMusic();
+    else if (el.bgMusic) el.bgMusic.pause();
+    updateToggles(); saveGame();
+  }
   function toggleSound() { game.soundOn = !game.soundOn; if (game.soundOn) sfx("buy"); updateToggles(); saveGame(); }
   function toggleVibrate() { game.vibrateOn = !game.vibrateOn; if (game.vibrateOn) haptic(25); updateToggles(); saveGame(); }
   function updateToggles() {
+    if (el.musicToggle) {
+      el.musicToggle.textContent = game.musicOn ? "🎵 Zene: BE" : "🎵 Zene: KI";
+      el.musicToggle.classList.toggle("off", !game.musicOn);
+    }
     if (el.soundToggle) {
       el.soundToggle.textContent = game.soundOn ? "🔊 Hang: BE" : "🔇 Hang: KI";
       el.soundToggle.classList.toggle("off", !game.soundOn);
@@ -1247,6 +1265,7 @@
     el.foodInfoBtn.addEventListener("click", () => { renderFoodInfo(); el.foodInfoPanel.classList.add("open"); });
     el.closeFoodInfo.addEventListener("click", () => el.foodInfoPanel.classList.remove("open"));
 
+    el.musicToggle.addEventListener("click", toggleMusic);
     el.soundToggle.addEventListener("click", toggleSound);
     el.vibrateToggle.addEventListener("click", toggleVibrate);
 
@@ -1300,6 +1319,10 @@
 
     renderFridge(); renderUpgrades(); renderProducers(); updateUI();
     checkAchievements(); // offline/korábban átlépett célok begyűjtése
+
+    // Háttérzene: az első koppintáskor indul (autoplay-tiltás miatt)
+    if (el.bgMusic) el.bgMusic.volume = CONFIG.musicVolume;
+    document.addEventListener("pointerdown", tryStartMusic, { once: true });
 
     setInterval(saveGame, CONFIG.autosaveMs);
     document.addEventListener("visibilitychange", () => {

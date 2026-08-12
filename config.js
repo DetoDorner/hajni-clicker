@@ -152,6 +152,8 @@ const CONFIG = {
   // ── ÉLMÉNY (juice) ──
   soundDefault: true,   // hangeffektek alapból be
   vibrateDefault: true, // rezgés alapból be (iPhone-on nincs Vibration API → ott hatástalan)
+  musicDefault: true,   // háttérzene alapból be
+  musicVolume: 0.35,    // háttérzene hangereje (0..1) – kellemes, halk
 
   // ── MENTÉS ──
   autosaveMs: 3000,

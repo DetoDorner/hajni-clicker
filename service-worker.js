@@ -8,7 +8,7 @@
 // Frissítéskor csak növeld a CACHE_NAME verziószámát.
 // ============================================================
 
-const CACHE_NAME = "hajni-clicker-v18";
+const CACHE_NAME = "hajni-clicker-v19";
 
 const CORE_FILES = [
   "./",
@@ -21,6 +21,7 @@ const CORE_FILES = [
 
 const OPTIONAL_FILES = [
   "./images/hajni.png",
+  "./audio/hajni-theme.mp3",
   "./images/icon-192.png",
   "./images/icon-512.png",
 ];
