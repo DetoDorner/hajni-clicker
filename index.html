@@ -112,10 +112,20 @@
   <script src="script.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
+      // Ha új service worker veszi át az irányítást, egyszer újratöltünk,
+      // hogy azonnal a friss fájlok fussanak (nincs régi/új keveredés).
+      // Az első telepítéskor NEM töltünk újra (hadController = false).
+      var hadController = !!navigator.serviceWorker.controller;
+      var refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (!hadController || refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      });
+      window.addEventListener('load', function () {
         navigator.serviceWorker.register('./service-worker.js')
-          .then(() => console.log('[PWA] SW regisztrálva'))
-          .catch(err => console.warn('[PWA] SW hiba:', err));
+          .then(function (reg) { if (reg.update) reg.update(); })
+          .catch(function (err) { console.warn('[PWA] SW hiba:', err); });
       });
     }
   </script>
