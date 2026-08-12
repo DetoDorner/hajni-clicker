@@ -8,7 +8,7 @@
 // Frissítéskor csak növeld a CACHE_NAME verziószámát.
 // ============================================================
 
-const CACHE_NAME = "hajni-clicker-v19";
+const CACHE_NAME = "hajni-clicker-v20";
 
 const CORE_FILES = [
   "./",

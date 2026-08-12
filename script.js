@@ -1320,9 +1320,14 @@
     renderFridge(); renderUpgrades(); renderProducers(); updateUI();
     checkAchievements(); // offline/korábban átlépett célok begyűjtése
 
-    // Háttérzene: az első koppintáskor indul (autoplay-tiltás miatt)
+    // Háttérzene: felhasználói koppintás UTÁN indul (autoplay-tiltás).
+    // Nem "once": ha az első próbát a böngésző elutasítja, a következő
+    // koppintásnál újrapróbálja, amíg tényleg el nem indul.
     if (el.bgMusic) el.bgMusic.volume = CONFIG.musicVolume;
-    document.addEventListener("pointerdown", tryStartMusic, { once: true });
+    const musicKick = () => { if (game.musicOn && el.bgMusic && el.bgMusic.paused) tryStartMusic(); };
+    document.addEventListener("pointerdown", musicKick);
+    document.addEventListener("click", musicKick);
+    document.addEventListener("touchstart", musicKick, { passive: true });
 
     setInterval(saveGame, CONFIG.autosaveMs);
     document.addEventListener("visibilitychange", () => {
