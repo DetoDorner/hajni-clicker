@@ -628,12 +628,12 @@
   // ============================================================
   // INDÍTÁS
   // ============================================================
-  // Ha a Hajni-kép betölt, elrejtjük a tartalék emojit (különben "átlátszana"
-  // a kép mögül). Ha a kép hiányzik, marad az emoji.
+  // Alapból a Hajni-kép látszik (az emoji rejtve). CSAK ha a kép nem
+  // tölthető be, akkor kapcsoljuk be az emoji tartalékot (.no-sprite).
+  // Így az emoji SOHA nincs a kép mögött.
   function setupSprite() {
     const img = new Image();
-    img.onload = () => el.hajniAvatar.classList.add("has-sprite");
-    img.onerror = () => el.hajniAvatar.classList.remove("has-sprite");
+    img.onerror = () => el.hajniAvatar.classList.add("no-sprite");
     img.src = "images/hajni.png";
   }
 

@@ -128,11 +128,13 @@ body {
   gap: 12px; position: relative; min-height: 0; padding: 6px 0;
 }
 
-/* Hajni avatar: keret + fény + talaj-árnyék */
+/* Hajni avatar: keret + fény + talaj-árnyék
+   A kép 2×2 rács, minden negyed 3:2 (fekvő) → a keret is 3:2, hogy a
+   Hajni-kép torzításmentesen, középre igazítva látszódjon. */
 .hajni-avatar {
-  --size: min(46vw, 200px);
-  width: var(--size); height: var(--size);
-  border-radius: 30px; position: relative; overflow: hidden;
+  --w: min(84vw, 330px);
+  width: var(--w); aspect-ratio: 3 / 2;
+  border-radius: 28px; position: relative; overflow: hidden;
   background:
     radial-gradient(120% 100% at 50% 0%, #6a4c34 0%, #3a281a 70%, #2a1c11 100%);
   border: 3px solid rgba(255, 190, 120, 0.35);
@@ -149,20 +151,21 @@ body {
   pointer-events: none; z-index: 3;
 }
 
+/* Emoji tartalék: ALAPBÓL REJTVE (nincs a kép mögött). Csak akkor jelenik
+   meg, ha a Hajni-kép tényleg nem tölthető be (.no-sprite). */
 .hajni-face {
-  position: absolute; inset: 0; z-index: 1;
-  display: flex; align-items: center; justify-content: center;
-  font-size: calc(var(--size) * 0.5);
+  position: absolute; inset: 0; z-index: 1; display: none;
+  align-items: center; justify-content: center;
+  font-size: calc(var(--w) * 0.3);
 }
 .hajni-sprite {
-  position: absolute; inset: 0; z-index: 2; display: none;
+  position: absolute; inset: 0; z-index: 2; display: block;
   background-image: url('images/hajni.png');
   background-repeat: no-repeat; background-size: 200% 200%; background-position: 0% 0%;
   transition: background-position .05s;
 }
-/* Ha a kép betöltött: sprite látszik, az emoji tartalék eltűnik */
-.hajni-avatar.has-sprite .hajni-face { display: none; }
-.hajni-avatar.has-sprite .hajni-sprite { display: block; }
+.hajni-avatar.no-sprite .hajni-face { display: flex; }
+.hajni-avatar.no-sprite .hajni-sprite { display: none; }
 .hajni-sprite.go { filter: grayscale(1) brightness(.5); }
 
 .hajni-avatar.state-sleeping { animation: breathe 3.4s ease-in-out infinite; }
@@ -415,7 +418,7 @@ body {
 
 /* Alacsony képernyő */
 @media (max-height: 720px) {
-  .hajni-avatar { --size: min(38vw, 150px); }
+  .hajni-avatar { --w: min(70vw, 260px); }
   .clicker-btn { height: 92px; }
   .clicker-btn .cb-icon { font-size: 40px; }
   .stage { gap: 9px; }
