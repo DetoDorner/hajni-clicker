@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#1a1410" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Hajni Burger Clicker</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- ── FEJLÉC ── -->
+    <div class="header">
+      <div class="level-block">
+        <div class="level-top">
+          <span class="level-label">SZINT <b id="levelNum">0</b></span>
+          <span class="gold-pill">🪙 <b id="goldNum">0</b></span>
+        </div>
+        <div class="level-bar">
+          <div class="level-bar-fill" id="levelBarFill"></div>
+          <div class="level-bar-text" id="levelBarText">0 / 30 húspont</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="mini-btn" id="pauseBtn">⏸️ Stop</button>
+        <button class="mini-btn" id="fridgeBtn">🧊 Hűtő</button>
+        <button class="mini-btn" id="upgBtn">⚙️ Fejlesztés</button>
+      </div>
+    </div>
+
+    <!-- ── SZÍNPAD ── -->
+    <div class="stage">
+      <div class="popup-layer" id="popupLayer"></div>
+
+      <div class="hajni-avatar state-sleeping" id="hajniAvatar">
+        <span class="hajni-face" id="hajniFace">😴</span>
+        <div class="hajni-sprite" id="hajniSprite"></div>
+      </div>
+      <div class="hajni-state" id="hajniState">ALSZIK</div>
+      <div class="hajni-hint" id="hajniHint">Farmolj kaját 🍔 vagy pénzt 🪙!</div>
+
+      <div class="sleep-row" id="sleepRow"><span>⏰ Ébredésig:</span> <b id="sleepTime">00:20</b></div>
+
+      <div class="hunger-row" id="hungerRow">
+        <div class="hunger-bar">
+          <div class="hunger-fill" id="hungerFill"></div>
+          <div class="hunger-text" id="hungerText">0 HP</div>
+        </div>
+        <div class="req-text" id="reqText"></div>
+      </div>
+
+      <!-- mindig látszik, mit szereztél legutóbb -->
+      <div class="last-gain" id="lastGain"></div>
+    </div>
+
+    <!-- ── KÉT FARM GOMB ── -->
+    <div class="clicker-row">
+      <button class="clicker-btn food" id="burgerBtn">
+        <span class="cb-icon">🍔</span><span class="cb-label">KAJASZERZÉS</span>
+      </button>
+      <button class="clicker-btn money" id="moneyBtn">
+        <span class="cb-icon">🪙</span><span class="cb-label">PÉNZSZERZÉS</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ HŰTŐ PANEL ══ -->
+  <div class="panel" id="fridgePanel">
+    <div class="panel-head">
+      <h2 id="fridgeHead">🧊 HŰTŐ</h2>
+      <button class="mini-btn" id="closeFridge">✕</button>
+    </div>
+    <div class="panel-status" id="fridgeStatus"></div>
+    <div class="panel-row">
+      <button class="wide-btn slim" id="autoFeedBtn">⚡ Etetés amíg jóllakik</button>
+      <button class="wide-btn slim alt" id="buySlotBtn">➕ Új slot</button>
+    </div>
+    <div class="panel-note">
+      <b>ÉHES</b> állapotban „🍽️ Odaadom" gombbal etetsz (vagy ⚡ gyorsan az egészet).
+      Kaját <b>slotonként</b> el is adhatsz 💰 – de a <b>PÉNZ</b> gomb sokkal jobb bevétel.
+    </div>
+    <div class="fslots" id="fridgeSlots"></div>
+  </div>
+
+  <!-- ══ FEJLESZTÉSEK PANEL ══ -->
+  <div class="panel" id="upgPanel">
+    <div class="panel-head">
+      <h2>⚙️ Fejlesztések</h2>
+      <button class="mini-btn" id="closeUpg">✕</button>
+    </div>
+    <div class="panel-status" id="upgStatus"></div>
+    <div class="panel-note">Aranypénzt 🪙 a <b>PÉNZSZERZÉS</b> gombbal szerzel (alvás közben).</div>
+    <div class="upg-list" id="upgList"></div>
+    <button class="wide-btn danger" id="resetAllBtn">🗑️ Teljes játék törlése (nulláról)</button>
+  </div>
+
+  <!-- ══ GAME OVER ══ -->
+  <div class="gameover" id="gameoverPanel">
+    <div class="go-card">
+      <div class="go-skull">💀</div>
+      <div class="go-title">GAME OVER</div>
+      <div class="go-info">A hűtő üresen maradt, amikor Hajni felébredt.</div>
+      <button class="wide-btn go-btn" id="restartBtn">🔄 Új játék</button>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js')
+          .then(() => console.log('[PWA] SW regisztrálva'))
+          .catch(err => console.warn('[PWA] SW hiba:', err));
+      });
+    }
+  </script>
+</body>
+</html>
