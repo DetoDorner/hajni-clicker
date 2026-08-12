@@ -53,7 +53,9 @@ body {
 }
 
 .app {
-  height: 100dvh; max-width: 480px; margin: 0 auto;
+  height: 100vh;   /* tartalék régi iOS-hez (nincs dvh) */
+  height: 100dvh;
+  max-width: 480px; margin: 0 auto;
   display: flex; flex-direction: column; position: relative;
   padding: calc(6px + env(safe-area-inset-top)) 14px calc(12px + env(safe-area-inset-bottom));
 }
@@ -168,7 +170,8 @@ body {
    Hajni-kép torzításmentesen, középre igazítva látszódjon. */
 .hajni-avatar {
   --w: min(84vw, 330px);
-  width: var(--w); aspect-ratio: 3 / 2;
+  width: var(--w);
+  height: min(56vw, 220px); /* = szélesség × 2/3 → pontos 3:2 aspect-ratio nélkül is (régi iOS!) */
   border-radius: 28px; position: relative; overflow: hidden;
   background:
     radial-gradient(120% 100% at 50% 0%, #6a4c34 0%, #3a281a 70%, #2a1c11 100%);
@@ -680,8 +683,22 @@ body {
 
 /* Alacsony képernyő */
 @media (max-height: 720px) {
-  .hajni-avatar { --w: min(70vw, 260px); }
-  .clicker-btn { height: 92px; }
-  .clicker-btn .cb-icon { font-size: 40px; }
-  .stage { gap: 9px; }
+  .hajni-avatar { --w: min(68vw, 260px); height: min(45vw, 173px); }
+  .clicker-btn { height: 88px; }
+  .clicker-btn .cb-icon { font-size: 38px; }
+  .stage { gap: 8px; }
+}
+/* Nagyon kicsi kijelző (pl. régi/kis iPhone) – tömörebb, kiegyensúlyozott */
+@media (max-height: 640px) {
+  .hajni-avatar { --w: min(60vw, 230px); height: min(40vw, 153px); border-radius: 22px; }
+  .header { padding: 4px 0 2px; }
+  .level-block { margin-bottom: 6px; }
+  .header-actions .mini-btn { padding: 8px 4px; font-size: 12px; }
+  .hajni-state { font-size: 15px; padding: 5px 14px; }
+  .hajni-hint { font-size: 12px; }
+  .stage { gap: 6px; padding: 2px 0; }
+  .clicker-row { padding: 6px 0 2px; }
+  .clicker-btn { height: 76px; border-radius: 18px; }
+  .clicker-btn .cb-icon { font-size: 32px; }
+  .clicker-btn .cb-label { font-size: 12px; }
 }
